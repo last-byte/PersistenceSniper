@@ -1,4 +1,4 @@
-﻿function Invoke-PersistenceFinder
+﻿function Find-AllPersistence
 {
   <#
       .SYNOPSIS
@@ -22,28 +22,28 @@
       .EXAMPLE
 
       Enumerate all persistence techniques implanted on the local machine (implicit).
-      Invoke-PersistenceFinder
+      Find-AllPersistence
 
       .EXAMPLE
 
       Enumerate all persistence techniques implanted on the local machine (explicit).
-      Invoke-PersistenceFinder -PersistenceMethod All
+      Find-AllPersistence -PersistenceMethod All
 
       .EXAMPLE
 
       Enumerate only Run and RunOnce keys persistence techniques implanted on the local machine.
-      Invoke-PersistenceFinder -PersistenceMethod RunAndRunOnce
+      Find-AllPersistence -PersistenceMethod RunAndRunOnce
 
       .NOTES
 
       This script tries to enumerate all persistence techniques that may have been deployed on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the script doesn't find anything the machine is clean.
       Most persistence techniques this script searches for are explained here https://persistence-info.github.io/ and are based on research by @Hexacorn.
       On a sidenote, this scripts makes heavy use of the Write-Host cmdlet which should be avoided but allows for easy output coloring. 
-      The downside to that is the fact that redirecting output to anything other than stdout will not redirect Write-Host output. In order to do so just import and run the script in another Powershell sessions: powershell.exe -ExecutionPolicy bypass -Command '. .\Invoke-PersistenceFinder.ps1; Invoke-PersistenceFinder -Verbose' > outputfile.txt
+      The downside to that is the fact that redirecting output to anything other than stdout will not redirect Write-Host output. In order to do so just import and run the script in another Powershell sessions: powershell.exe -ExecutionPolicy bypass -Command '. .\unPowersist.ps1; Find-AllPersistence -Verbose' > outputfile.txt
 
       .LINK
 
-      https://github.com/last-byte/Invoke-PersistenceFinder
+      https://github.com/last-byte/unPowersist
   #>
   
   [CmdletBinding(DefaultParameterSetName='PersistenceMethod')]
@@ -382,8 +382,8 @@
 # SIG # Begin signature block
 # MIID7QYJKoZIhvcNAQcCoIID3jCCA9oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhSSYOS/aSUhOpsF9U075SenY
-# zP2gggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSdVpTaciy0ipRN8iqJzpaZIX
+# wuigggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
 # AQUFADAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YTAeFw0yMjA3MTkxNDEz
 # MDJaFw0yNjA3MTkwMDAwMDBaMBwxGjAYBgNVBAMMEUZlZGVyaWNvIExhZ3Jhc3Rh
 # MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDjMbaODrvLdzZbpl4zEtqUXMXl
@@ -397,9 +397,9 @@
 # UDCCAUwCAQEwMDAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YQIQF+BNQBpc
 # W6RBBEo1bSFRGzAJBgUrDgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKA
 # ADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYK
-# KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUU2EMc2saoT8SpDa1X9iQ3S1meccw
-# DQYJKoZIhvcNAQEBBQAEgYASa22IFreW8kRZazxSsWwc/QgoE9IT7TKuoDye2Xd6
-# bLxMD7hs0WszQu7tJIVyPMttd7H7BEX9LJ0CY3ehUN22TamFwLxD1wZUw/0iV3Gi
-# wuUAqTofQ2d0YdzO1L/j3vMUvC+2cVdtjmLAV5Vf4Yz8ma8/CDMfiJ6Kh9O4LGAp
-# 6A==
+# KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUehNpZoOQc7y9vqeQCWXByG7g/uEw
+# DQYJKoZIhvcNAQEBBQAEgYAoBjhhEAZddSTk5Jd+vpRCbeViHbsVTdkWCE6i6EcZ
+# Oc8Rpx2UWxgPuBU5EEedW5eBKDqlUxv+cacuV0j+qCPZodfqfOwW2WFl4GzxAzaa
+# slf5v5nETEnzOjk2qdw1qOtEKdOWS1ztlXpjizFrvVlubU6ST9o9I+KaTIZItUjp
+# rg==
 # SIG # End signature block
