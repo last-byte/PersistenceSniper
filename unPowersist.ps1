@@ -1,12 +1,13 @@
-﻿function Find-AllPersistence
+﻿#Requires -RunAsAdministrator
+function Find-AllPersistence
 {
   <#
       .SYNOPSIS
 
       This script tries to enumerate all the persistence methods implanted on a compromised machine.
 
-      Function: Invoke-PersistenceFinder
-      Author: Federico `last` Lagrasta, Twitter: @last0x00
+      Function: Find-AllPersistence
+      Authors: Federico `last` Lagrasta, Twitter: @last0x00; Riccardo Ancarani, Twitter: @dottor_morte
       License: https://creativecommons.org/licenses/by/3.0/deed.en
       Required Dependencies: None
       Optional Dependencies: None
@@ -57,6 +58,7 @@
   function Get-UsersRunAndRunOnce
   {
     Write-Host
+    Write-Host "=== MITRE ATT&CK T1547.001 - USERS' RUN AND RUNONCE KEYS ===" -ForegroundColor DarkYellow
     Write-Verbose -Message "Getting users' Run properties..."
     Write-Verbose -Message "Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.`n"
     $hkeyUsers = Get-ChildItem -Path Registry::HKEY_USERS
@@ -97,8 +99,9 @@
     }
   }
   
-  function Get-HKLMRunAndRunOnce
+  function Get-SystemRunAndRunOnce
   {
+    Write-Host "=== MITRE ATT&CK T1547.001 - SYSTEM'S RUN AND RUNONCE KEYS ===" -ForegroundColor DarkYellow
     Write-Verbose -Message "Getting system's Run properties..."
     Write-Verbose -Message "Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the system boots.`n"
     $runProps = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'  | Select-Object -Property * -ExcludeProperty PSPath,PSParentPath,PSChildName,PSDrive,PSProvider
@@ -131,6 +134,7 @@
   {
     $IFEOptsDebuggers = New-Object -TypeName System.Collections.ArrayList
     $foundDangerousIFEOpts = $false
+    Write-Host "=== MITRE ATT&CK T1546.012 - IMAGE FILE EXECUTION OPTIONS ===" -ForegroundColor DarkYellow
     Write-Verbose -Message 'Getting Image File Execution Options...'
     Write-Verbose -Message "Executables in the Debugger property of a subkey of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options are run when the process corresponding to the subkey crashes.`n"
     $ifeOpts = Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options' -ErrorAction SilentlyContinue
@@ -170,6 +174,7 @@
   {
     $KeysWithDllOverridePath = New-Object -TypeName System.Collections.ArrayList
     $foundDllOverridePath = $false
+    Write-Host "=== HEXACORN TECHNIQUE N.98 - NATURAL LANGUAGE DEVELOPMENT PLATFORM 6 DLL OVERRIDE PATH ===" -ForegroundColor DarkYellow
     Write-Verbose -Message 'Getting Natural Language Development Platform DLL path override properties...'
     Write-Verbose -Message "DLLs listed in properties of subkeys of HKLM:\SYSTEM\CurrentControlSet\Control\ContentIndex\Language are loaded via LoadLibrary executed by SearchIndexer.exe`n"
     $NLDPLanguages = Get-ChildItem -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\ContentIndex\Language' -ErrorAction SilentlyContinue
@@ -208,6 +213,7 @@
   function Get-AeDebug
   {
     Write-Host
+    Write-Host "=== UNCATALOGUE TECHNIQUE N.1 - AEDEBUG CUSTOM DEBUGGER ===" -ForegroundColor DarkYellow
     Write-Verbose -Message 'Getting AeDebug properties...'
     Write-Verbose -Message "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process is debugged. If the Auto property (REG_SZ) is set to 1, no user interaction is required.`n"
     $aeDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug' -Name Debugger -ErrorAction SilentlyContinue
@@ -227,6 +233,7 @@
   function Get-WerFaultHangs
   {
     Write-Host
+    Write-Host "=== HEXACORN TECHNIQUE N.116 - WINDOWS ERROR REPORTING DEBUGGER ===" -ForegroundColor DarkYellow
     Write-Verbose -Message 'Getting WerFault Hangs registry key Debug property...'
     Write-Verbose -Message "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs is spawned by WerFault.exe when a process creashes.`n"
     $werfaultDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs' -Name Debugger -ErrorAction SilentlyContinue
@@ -241,6 +248,7 @@
       Write-Host
     }
     
+    Write-Host "=== UNCATALOGUED TECHNIQUE N.2 - WINDOWS ERROR REPORTING REFLECTDEBUGGER ===" -ForegroundColor DarkYellow
     Write-Verbose -Message 'Getting WerFault Hangs registry key ReflectDebug property...'
     Write-Verbose -Message "The executable in the ReflectDebugger property of HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs is spawned by WerFault.exe when called with the -pr argument.`n"
     $werfaultReflectDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs' -Name ReflectDebugger -ErrorAction SilentlyContinue
@@ -258,28 +266,35 @@
     return
   }
 
-  function Get-HKCUCmdAutoRun
+  function Get-UsersCmdAutoRun
   {
     Write-Host
-    Write-Verbose -Message "Getting current user's cmd.exe's AutoRun property..."
-    Write-Verbose -Message "The executable in the AutoRun property of HKCU:\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.`n"
-    $autorun = Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Command Processor' -Name AutoRun -ErrorAction SilentlyContinue
-    if(!$autorun)
+    Write-Host "=== UNCATALOGUED TECHNIQUE N.3 - USERS' CMD.EXE AUTORUN ===" -ForegroundColor DarkYellow
+    Write-Verbose -Message "Getting users' cmd.exe's AutoRun property..."
+    Write-Verbose -Message "The executable in the AutoRun property of HKEY_USERS\<User_SID>\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.`n"
+    $hkeyUsers = Get-ChildItem -Path Registry::HKEY_USERS
+    foreach($sidHive in $hkeyUsers)
     {
-      Write-Host "[+] No persistence found under current user's cmd.exe's AutoRun key" -ForegroundColor Green
-    }
-    else
-    {
-      Write-Host "[!] Current user's cmd.exe's AutoRun property is set and deserves investigation!" -ForegroundColor Red
-      ($autorun | Select-Object -ExpandProperty AutoRun | Out-String).Trim()
-    }
-    
+      Write-Verbose -Message "Checking $sidHive registry hive..."
+      $currentUser = "Registry::$sidHive"
+      $autorun = Get-ItemProperty -Path "$currentUser\Software\Microsoft\Command Processor" -Name AutoRun -ErrorAction SilentlyContinue
+      if(!$autorun)
+      {
+        Write-Host "[+] $sidHive user's cmd.exe's AutoRun key is not set so it's not being used as persistence!`n" -ForegroundColor Green
+      }
+      else
+      {
+        Write-Host "[!] $sidHive user's cmd.exe's AutoRun property is set and deserves investigation!" -ForegroundColor Red
+        ($autorun | Select-Object -ExpandProperty AutoRun | Out-String).Trim()
+        Write-Host
+      }
+    }   
     return
   }
   
-  function Get-HKLMCmdAutoRun
+  function Get-SystemCmdAutoRun
   {
-    Write-Host
+    Write-Host "=== UNCATALOGUED TECHNIQUE N.3 - SYSTEM'S CMD.EXE AUTORUN ===" -ForegroundColor DarkYellow
     Write-Verbose -Message "Getting system's cmd.exe's AutoRun property..."
     Write-Verbose -Message "The executable in the AutoRun property of HKLM:\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.`n"
     $autorun = Get-ItemProperty -Path 'HKLM:\Software\Microsoft\Command Processor' -Name AutoRun -ErrorAction SilentlyContinue
@@ -299,6 +314,7 @@
   function Get-ExplorerLoad
   {
     Write-Host
+    Write-Host "=== UNCATALOGUED TECHNIQUE N.4 - EXPLORER LOAD PROPERTY ===" -ForegroundColor DarkYellow
     Write-Verbose -Message "Getting current user's Explorer's Load property..."
     Write-Verbose -Message "The executable in the Load property of HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time.`n"
     $loadKey = Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Name Load -ErrorAction SilentlyContinue
@@ -315,10 +331,11 @@
     return
   }
   
-  function Get-WinlogonUserInit
+  function Get-SystemWinlogonUserinit
   {
     Write-Host
-    Write-Verbose -Message "Getting Winlogon's Userinit property..."
+    Write-Host "=== MITRE ATT&CK T1547.004 - SYSTEM'S WINLOGON USERINIT PROPERTY TAMPERING ===" -ForegroundColor DarkYellow
+    Write-Verbose -Message "Getting system's Winlogon's Userinit property..."
     Write-Verbose -Message "The executables in the Userinit property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run at login time by any user. Normally this property should be set to 'C:\Windows\system32\userinit.exe,' without any further executables appended.`n"
     $userinit = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name Userinit -ErrorAction SilentlyContinue
     if(!$userinit)
@@ -340,9 +357,10 @@
     return
   }
   
-  function Get-WinlogonShell
+  function Get-SystemWinlogonShell
   {
     Write-Host
+    Write-Host "=== MITRE ATT&CK T1547.004 - SYSTEM'S WINLOGON SHELL PROPERTY TAMPERING ===" -ForegroundColor DarkYellow
     Write-Verbose -Message "Getting Winlogon's Shell property..."
     Write-Verbose -Message "The executables in the Shell property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run as the default shells for any users. Normally this property should be set to 'explorer.exe' without any further executables appended.`n"
     $shell = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name Shell -ErrorAction SilentlyContinue
@@ -367,23 +385,23 @@
   
   Write-Verbose -Message 'Starting execution...'
   Get-UsersRunAndRunOnce
-  Get-HKLMRunAndRunOnce
+  Get-SystemRunAndRunOnce
   Get-ImageFileExecutionOptions
   Get-NLDPDllOverridePath
   Get-AeDebug
   Get-WerFaultHangs
-  Get-HKCUCmdAutoRun
-  Get-HKLMCmdAutoRun
+  Get-UsersCmdAutoRun
+  Get-SystemCmdAutoRun
   Get-ExplorerLoad
-  Get-WinlogonUserInit
-  Get-WinlogonShell
+  Get-SystemWinlogonUserinit
+  Get-SystemWinlogonShell
   Write-Verbose -Message 'Execution finished!'
 }
 # SIG # Begin signature block
 # MIID7QYJKoZIhvcNAQcCoIID3jCCA9oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSdVpTaciy0ipRN8iqJzpaZIX
-# wuigggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU1dh3bnBnJkdkNV001hxVoflQ
+# ldagggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
 # AQUFADAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YTAeFw0yMjA3MTkxNDEz
 # MDJaFw0yNjA3MTkwMDAwMDBaMBwxGjAYBgNVBAMMEUZlZGVyaWNvIExhZ3Jhc3Rh
 # MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDjMbaODrvLdzZbpl4zEtqUXMXl
@@ -397,9 +415,9 @@
 # UDCCAUwCAQEwMDAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YQIQF+BNQBpc
 # W6RBBEo1bSFRGzAJBgUrDgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKA
 # ADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYK
-# KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUehNpZoOQc7y9vqeQCWXByG7g/uEw
-# DQYJKoZIhvcNAQEBBQAEgYAoBjhhEAZddSTk5Jd+vpRCbeViHbsVTdkWCE6i6EcZ
-# Oc8Rpx2UWxgPuBU5EEedW5eBKDqlUxv+cacuV0j+qCPZodfqfOwW2WFl4GzxAzaa
-# slf5v5nETEnzOjk2qdw1qOtEKdOWS1ztlXpjizFrvVlubU6ST9o9I+KaTIZItUjp
-# rg==
+# KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUl31koZcPh75KTZPkiyBhnbgW/+ow
+# DQYJKoZIhvcNAQEBBQAEgYB6MIHAm+IdSffyvxIjm3x4NoeIg5z18f4U0u9kqilr
+# cvK6bfONowXvlYO5IrM5DVuarEdjjEFaLvwDKDhmJwd1PT0xvntNsC+zxhpAsmdC
+# pjGBlWrUkIEm3KvJRPLSl09j5BPaa5+mqiCnf85qjLLndHGpzgI8D4i1XpTKwyhA
+# BA==
 # SIG # End signature block
