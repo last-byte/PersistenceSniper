@@ -422,12 +422,11 @@ function Find-AllPersistence
   Get-ExplorerLoad
   Get-SystemWinlogonUserinit
   Get-SystemWinlogonShell
-  
-  Write-Verbose -Message 'Execution finished!'
-  
+    
   # Use Input CSV to make a diff of the results and only show us the persistences implanted on the local machine which are not in the CSV
   if($DiffCSV)
   {
+    Write-Verbose "Diffing found persistences with the ones in the input CSV..."
     $importedPersistenceObjectArray = Import-Csv -Path $DiffCSV -ErrorAction Stop
     $newPersistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
     foreach($localPersistence in $persistenceObjectArray)
@@ -453,6 +452,7 @@ function Find-AllPersistence
   {
     $persistenceObjectArray | ConvertTo-Csv | Out-File -FilePath $OutputCSV -ErrorAction Stop
   }
-    
+  
+  Write-Verbose -Message 'Execution finished, outputting results...'  
   return $persistenceObjectArray
 }
