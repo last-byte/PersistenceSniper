@@ -252,7 +252,7 @@ function Find-AllPersistence
         if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
         $propPath = Convert-Path $aeDebugger.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "AEDebug Custom Debugger" "Uncatalogued Technique N.1" $propPath $aeDebugger.($prop.Name) "System/User" "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction." "https://persistence-info.github.io/Data/aedebug.html"
+        $persistenceObject = New-PersistenceObject "AEDebug Custom Debugger" "Hexacorn Technique N.4" $propPath $aeDebugger.($prop.Name) "System/User" "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction." "https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/"
         $null = $persistenceObjectArray.Add($persistenceObject)
       }
     }
@@ -282,7 +282,7 @@ function Find-AllPersistence
     $werfaultReflectDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs' -Name ReflectDebugger -ErrorAction SilentlyContinue
     if($werfaultReflectDebugger)
     {
-      Write-Verbose -Message "[!] Found a ReflectDebugger property under the WerFault Hangs key which deserve investigation!`n`n"
+      Write-Verbose -Message "[!] Found a ReflectDebugger property under the WerFault Hangs key which deserve investigation!"
       $werfaultReflectDebugger | Select-Object -Property ReflectDebugger,PS*
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $werfaultReflectDebugger))
       {
@@ -313,7 +313,7 @@ function Find-AllPersistence
           if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
           $propPath = Convert-Path $autorun.PSPath
           $propPath += '\' + $prop.Name
-          $persistenceObject = New-PersistenceObject "Users' cmd.exe AutoRun key" "Uncatalogued Technique N.3" $propPath $autorun.($prop.Name) "User" "The executable in the AutoRun property of HKEY_USERS\<User_SID>\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument." "https://persistence-info.github.io/Data/cmdautorun.html"
+          $persistenceObject = New-PersistenceObject "Users' cmd.exe AutoRun key" "Uncatalogued Technique N.1" $propPath $autorun.($prop.Name) "User" "The executable in the AutoRun property of HKEY_USERS\<User_SID>\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument." "https://persistence-info.github.io/Data/cmdautorun.html"
           $null = $persistenceObjectArray.Add($persistenceObject)
         }
       }
@@ -333,7 +333,7 @@ function Find-AllPersistence
         if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
         $propPath = Convert-Path $autorun.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "System's cmd.exe AutoRun key" "Uncatalogued Technique N.3" $propPath $autorun.($prop.Name) "User" "The executable in the AutoRun property of HKEY_LOCAL_MACHINE\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument." "https://persistence-info.github.io/Data/cmdautorun.html"
+        $persistenceObject = New-PersistenceObject "System's cmd.exe AutoRun key" "Uncatalogued Technique N.1" $propPath $autorun.($prop.Name) "User" "The executable in the AutoRun property of HKEY_LOCAL_MACHINE\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument." "https://persistence-info.github.io/Data/cmdautorun.html"
         $null = $persistenceObjectArray.Add($persistenceObject)
       }
     }
@@ -353,7 +353,7 @@ function Find-AllPersistence
         if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
         $propPath = Convert-Path $loadKey.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "Explorer Load Property" "Uncatalogued Technique N.4" $propPath $loadKey.($prop.Name) "User" "The executable in the Load property of HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time." "https://persistence-info.github.io/Data/windowsload.html"
+        $persistenceObject = New-PersistenceObject "Explorer Load Property" "Uncatalogued Technique N.2" $propPath $loadKey.($prop.Name) "User" "The executable in the Load property of HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time." "https://persistence-info.github.io/Data/windowsload.html"
         $null = $persistenceObjectArray.Add($persistenceObject)
       }
     }
@@ -410,6 +410,7 @@ function Find-AllPersistence
   }
   
   Write-Verbose -Message 'Starting execution...'
+  
   Get-UsersRunAndRunOnce
   Get-SystemRunAndRunOnce
   Get-ImageFileExecutionOptions
@@ -421,7 +422,7 @@ function Find-AllPersistence
   Get-ExplorerLoad
   Get-SystemWinlogonUserinit
   Get-SystemWinlogonShell
-    
+  
   Write-Verbose -Message 'Execution finished!'
   
   # Use Input CSV to make a diff of the results and only show us the persistences implanted on the local machine which are not in the CSV
