@@ -23,7 +23,7 @@ $PersistenceObject = [PSCustomObject]@{
 } 
 ```
 
-This allows for easy output formatting and filtering. Let's say you want to only see the persistences that will allow the attacker to re-gain access as an administrator (aka System):
+This allows for easy output formatting and filtering. Let's say you only want to see the persistences that will allow the attacker to re-gain access as an administrator (aka System):
 
 ```
 PS C:\> Find-AllPersistence | Where-Object "Access Gained" -EQ "System"
