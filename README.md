@@ -31,6 +31,16 @@ PS C:\> Find-AllPersistence | Where-Object "Access Gained" -EQ "System"
 
 ![](resources/findallpersistenceexample01.png)
 
+## Interpreting results
+As already introduced, `Find-AllPersistence` outputs an array of Powershell Custom Objects. Each object has the following properties, which can be used to filter, sort and better understand the different techniques the function looks for:
+- Technique: this is the name of the technique itself, as it's commonly known in the community;
+- Classification: this property can be used to quickly identify techniques based on their MITRE ATT&CK technique and subtechnique number. For those techniques which don't have a MITRE ATT&CK classification, other classifications are used, the most common being [Hexacorn's one](https://www.hexacorn.com/blog/2017/01/28/beyond-good-ol-run-key-all-parts/) since a lot of techniques were discovered by him. When a technique's source cannot be reliably identified, the "Uncatalogued Technique N.#" classification is used; 
+- Path: this is the path, on the filesystem or in the registry, at which the technique has been implanted;
+- Value: this is the value of the registry property the techniques uses, or the name of the executable/library used, in case it's a technique which relies on planting something on the filesystem;
+- Access Gained: this is the kind of access the technique grants the attacker. If it's a Run key under HKCU for example, the access gained will be at a user level, while if it's under HKLM it will be at system level;
+- Note: this is a quick explanation of the technique, so that its workings can be easily grasped;
+- Reference: this is a link to a more in-depth explanation of the technique, should the analyst need to study it more.
+
 ## Dealing with false positives
 Let's face it, hunting for persistence techniques also comes with having to deal with a lot of false positives. This happens because, while some techniques are almost never legimately used, many indeed are by legit software which needs to autorun on system boot or user login.
 
@@ -43,3 +53,6 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 ```
 
 ![](resources/findallpersistenceexample02.png)
+
+## License
+This project is under the [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/deed.en) license.
