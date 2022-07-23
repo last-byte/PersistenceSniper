@@ -57,5 +57,25 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 
 ![](resources/findallpersistenceexample02.png)
 
+## Persistence techniques implemented so far
+There are literally hundreds of already public persistence techniques, with more coming out by the week. This is a list of the ones implemented so far:
+- [x] HKEY_USERS and HKLM Run Key
+- [x] HKEY_USERS and HKLM RunOnce Key
+- [x] Image File Execution Options
+- [x] Natural Language Development Platform 6 DLL Override Path
+- [x] AEDebug Key
+- [x] Windows Error Reporting Debugger
+- [x] Windows Error Reporting ReflectDebugger
+- [x] HKEY_USERS and HKLM cmd.exe AutoRun
+- [x] HKEY_USERS Explorer Load
+- [x] Winlogon Userinit
+- [x] Winlogon Shell
+
+## Credits
+The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
+- [Hexacorn](https://www.hexacorn.com/);
+- [Grzegorz Tworek](https://persistence-info.github.io/);
+- All the other researchers who disclosed cool and unknown persistence techniques.
+
 ## License
 This project is under the [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/deed.en) license.
