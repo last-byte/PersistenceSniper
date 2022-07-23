@@ -61,24 +61,24 @@ function Find-AllPersistence
   function New-PersistenceObject
   {
     param(
-      $technique, 
-      $classification, 
-      $path, 
-      $value, 
-      $accessGained,
-      $note,
-      $reference
+      $Technique, 
+      $Classification, 
+      $Path, 
+      $Value, 
+      $AccessGained,
+      $Note,
+      $Reference
     )
-    $persistenceObject = [PSCustomObject]@{
-      "Technique" = $technique
-      "Classification" = $classification
-      "Path" = $path
-      "Value" = $value
-      "Access Gained" = $accessGained
-      "Note" = $note
-      "Reference" = $reference
+    $PersistenceObject = [PSCustomObject]@{
+      "Technique" = $Technique
+      "Classification" = $Classification
+      "Path" = $Path
+      "Value" = $Value
+      "Access Gained" = $AccessGained
+      "Note" = $Note
+      "Reference" = $Reference
     } 
-    return $persistenceObject
+    return $PersistenceObject
   }
   
   $persistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
