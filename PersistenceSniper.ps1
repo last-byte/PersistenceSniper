@@ -8,7 +8,7 @@ function Find-AllPersistence
 
       Function: Find-AllPersistence
       Authors: Federico `last` Lagrasta, Twitter: @last0x00; Riccardo Ancarani, Twitter: @dottor_morte
-      License: https://creativecommons.org/licenses/by/3.0/deed.en
+      License: https://creativecommons.org/publicdomain/zero/1.0/
       Required Dependencies: None
       Optional Dependencies: None
 
