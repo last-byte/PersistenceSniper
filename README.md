@@ -39,7 +39,7 @@ This poses a challenge, which in many environments can be tackled by creating a 
 `Find-AllPersistence` comes with parameters allowing direct output of the findings to a CSV file, while also being able to take a CSV file as input and diffing the results.
 
 ```
-PS C:\> Find-AllPersistence -DiffCSV .\false_positives.csv
+PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 ```
 
 ![](resources/findallpersistenceexample02.png)
