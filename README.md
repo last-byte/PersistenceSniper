@@ -44,7 +44,10 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 ## Dealing with false positives
 Let's face it, hunting for persistence techniques also comes with having to deal with a lot of false positives. This happens because, while some techniques are almost never legimately used, many indeed are by legit software which needs to autorun on system boot or user login.
 
-This poses a challenge, which in many environments can be tackled by creating a CSV file containing known false positives. If your organization deploys systems using something like a golden image, you can run Persistence Sniper on a system you just created, get a CSV of the results and use it to filter out results on other machines.
+This poses a challenge, which in many environments can be tackled by creating a CSV file containing known false positives. If your organization deploys systems using something like a golden image, you can run Persistence Sniper on a system you just created, get a CSV of the results and use it to filter out results on other machines. This approach comes with the following benefits:
+- Not having to manage a whitelist of persistences which can be tedious and error-prone;
+- Tailoring the false positives to the organizations, and their organizational units, which use the tool;
+- Making it harder for attackers who want to blend in false positives by not publicly disclosing them in the tool's code.
 
 `Find-AllPersistence` comes with parameters allowing direct output of the findings to a CSV file, while also being able to take a CSV file as input and diffing the results.
 
