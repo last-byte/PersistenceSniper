@@ -78,4 +78,4 @@ The techniques implemented in this script have already been published by skilled
 - All the other researchers who disclosed cool and unknown persistence techniques.
 
 ## License
-This project is under the [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/deed.en) license.
+This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license.
