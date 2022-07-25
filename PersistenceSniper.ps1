@@ -420,18 +420,26 @@ function Find-AllPersistence
       {
         #$settingsFile = ConvertFrom-Json -InputObject (Get-Content (Get-ChildItem -Path "$($terminalDirectory.FullName)\LocalState\settings.json")).ToString()
         $settingsFile = Get-Content -Raw -Path "$($terminalDirectory.FullName)\LocalState\settings.json" | ConvertFrom-Json
-        #$settingsFile
+        if($settingsFile.startOnUserLogin -ne 'true'){ return } # return if startOnUserLogin is not present
+        $defaultProfileGuid = $settingsFile.defaultProfile
+        $found = $false 
         foreach($profileList in $settingsFile.profiles)
         {
           foreach($profile in $profileList.list)
           {
-            if($profile.startOnUserLogin)
+            if($profile.guid -eq $defaultProfileGuid)
             {
-              Write-Verbose -Message "[!] The file $($terminalDirectory.FullName)\LocalState\settings.json contains a profile with GUID $($profile.guid) and the startOnUserLogin key set!"
-              $persistenceObject = New-PersistenceObject "Windows Terminal startOnUserLogin" "Uncatalogued Technique N.3" "$($terminalDirectory.FullName)\LocalState\settings.json" "$($profile.startOnUserLogin)" "User" "The executable specified as value of the key startOnUserLogin of a profile in the Windows Terminal's settings.json of a user is run every time the user logs in." "https://twitter.com/nas_bench/status/1550836225652686848"
+              Write-Verbose -Message "[!] The file $($terminalDirectory.FullName)\LocalState\settings.json has the startOnUserLogin key set, the default profile has GUID $($profile.guid)!"
+              if($profile.commandline){ $executable = $profile.commandline }
+              else { $executable = $profile.name }
+              
+              $persistenceObject = New-PersistenceObject "Windows Terminal startOnUserLogin" "Uncatalogued Technique N.3" "$($terminalDirectory.FullName)\LocalState\settings.json" "$executable" "User" "The executable specified as value of the key `"commandline`" of a profile which has the `"startOnUserLogin`" key set to `"true`" in the Windows Terminal's settings.json of a user is run every time that user logs in." "https://twitter.com/nas_bench/status/1550836225652686848"
               $null = $persistenceObjectArray.Add($persistenceObject)
+              $found = $true
+              break
             }
           }
+          if ($found) { break } 
         }
       }
     }    
