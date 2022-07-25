@@ -418,7 +418,6 @@ function Find-AllPersistence
       $terminalDirectories = Get-ChildItem -Path "$($directory.FullName)\Appdata\Local\Packages\Microsoft.WindowsTerminal_*" -ErrorAction SilentlyContinue
       foreach($terminalDirectory in $terminalDirectories)
       {
-        #$settingsFile = ConvertFrom-Json -InputObject (Get-Content (Get-ChildItem -Path "$($terminalDirectory.FullName)\LocalState\settings.json")).ToString()
         $settingsFile = Get-Content -Raw -Path "$($terminalDirectory.FullName)\LocalState\settings.json" | ConvertFrom-Json
         if($settingsFile.startOnUserLogin -ne 'true'){ return } # return if startOnUserLogin is not present
         $defaultProfileGuid = $settingsFile.defaultProfile
@@ -447,7 +446,7 @@ function Find-AllPersistence
   }
   
   Write-Verbose -Message 'Starting execution...'
-  
+
   Get-UsersRunAndRunOnce
   Get-SystemRunAndRunOnce
   Get-ImageFileExecutionOptions
@@ -460,7 +459,7 @@ function Find-AllPersistence
   Get-SystemWinlogonUserinit
   Get-SystemWinlogonShell
   Get-TerminalProfileStartOnUserLogin
-    
+  
   # Use Input CSV to make a diff of the results and only show us the persistences implanted on the local machine which are not in the CSV
   if($DiffCSV)
   {
