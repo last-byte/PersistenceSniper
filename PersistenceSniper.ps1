@@ -409,6 +409,35 @@ function Find-AllPersistence
     Write-Verbose -Message ''
   }
   
+  function Get-TerminalProfileStartOnUserLogin
+  {
+    Write-Verbose -Message "Checking if users' Windows Terminal Profile's settings.json contains a startOnUserLogin value..."
+    $userDirectories = Get-ChildItem -Path 'C:\Users\'
+    foreach($directory in $userDirectories)
+    {
+      $terminalDirectories = Get-ChildItem -Path "$($directory.FullName)\Appdata\Local\Packages\Microsoft.WindowsTerminal_*" -ErrorAction SilentlyContinue
+      foreach($terminalDirectory in $terminalDirectories)
+      {
+        #$settingsFile = ConvertFrom-Json -InputObject (Get-Content (Get-ChildItem -Path "$($terminalDirectory.FullName)\LocalState\settings.json")).ToString()
+        $settingsFile = Get-Content -Raw -Path "$($terminalDirectory.FullName)\LocalState\settings.json" | ConvertFrom-Json
+        #$settingsFile
+        foreach($profileList in $settingsFile.profiles)
+        {
+          foreach($profile in $profileList.list)
+          {
+            if($profile.startOnUserLogin)
+            {
+              Write-Verbose -Message "[!] The file $($terminalDirectory.FullName)\LocalState\settings.json contains a profile with GUID $($profile.guid) and the startOnUserLogin key set!"
+              $persistenceObject = New-PersistenceObject "Windows Terminal startOnUserLogin" "Uncatalogued Technique N.3" "$($terminalDirectory.FullName)\LocalState\settings.json" "$($profile.startOnUserLogin)" "User" "The executable specified as value of the key startOnUserLogin of a profile in the Windows Terminal's settings.json of a user is run every time the user logs in." "https://twitter.com/nas_bench/status/1550836225652686848"
+              $null = $persistenceObjectArray.Add($persistenceObject)
+            }
+          }
+        }
+      }
+    }    
+    Write-Verbose -Message ''
+  }
+  
   Write-Verbose -Message 'Starting execution...'
   
   Get-UsersRunAndRunOnce
@@ -422,6 +451,7 @@ function Find-AllPersistence
   Get-ExplorerLoad
   Get-SystemWinlogonUserinit
   Get-SystemWinlogonShell
+  Get-TerminalProfileStartOnUserLogin
     
   # Use Input CSV to make a diff of the results and only show us the persistences implanted on the local machine which are not in the CSV
   if($DiffCSV)

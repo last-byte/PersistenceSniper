@@ -59,17 +59,18 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 
 ## Persistence techniques implemented so far
 There are literally hundreds of already public persistence techniques, with more coming out by the week. This is a list of the ones implemented so far:
-- [x] HKEY_USERS and HKLM Run Key
-- [x] HKEY_USERS and HKLM RunOnce Key
-- [x] Image File Execution Options
-- [x] Natural Language Development Platform 6 DLL Override Path
-- [x] AEDebug Key
-- [x] Windows Error Reporting Debugger
-- [x] Windows Error Reporting ReflectDebugger
-- [x] HKEY_USERS and HKLM cmd.exe AutoRun
-- [x] HKEY_USERS Explorer Load
-- [x] Winlogon Userinit
-- [x] Winlogon Shell
+- [x] [HKEY_USERS and HKLM Run Key](https://attack.mitre.org/techniques/T1547/001/)
+- [x] [HKEY_USERS and HKLM RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
+- [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
+- [x] [Natural Language Development Platform 6 DLL Override Path](https://www.hexacorn.com/blog/2018/12/30/beyond-good-ol-run-key-part-98/)
+- [x] [AEDebug Key](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/)
+- [x] [Windows Error Reporting Debugger](https://www.hexacorn.com/blog/2019/09/20/beyond-good-ol-run-key-part-116/)
+- [x] [Windows Error Reporting ReflectDebugger](https://www.hexacorn.com/blog/2018/08/31/beyond-good-ol-run-key-part-85/)
+- [x] [HKEY_USERS and HKLM cmd.exe AutoRun](https://persistence-info.github.io/Data/cmdautorun.html)
+- [x] [HKEY_USERS Explorer Load](https://persistence-info.github.io/Data/windowsload.html)
+- [x] [Winlogon Userinit](https://attack.mitre.org/techniques/T1547/004/)
+- [x] [Winlogon Shell](https://attack.mitre.org/techniques/T1547/004/)
+- [x] [Windows Terminal startOnUserLogin](https://twitter.com/nas_bench/status/1550836225652686848)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
