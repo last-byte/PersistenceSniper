@@ -16,28 +16,37 @@ function Find-AllPersistence
 
       Enumerate all the persistence methods found on a machine and print them for the user to see.
 
-      .PARAMETER OutputCSV
-
-      String: Output to a CSV file for later consumption.
-
       .PARAMETER DiffCSV
 
       String: Take a CSV as input and exclude from the output all the local persistences which match the ones in the input CSV. 
 	    
+      .PARAMETER OutputCSV
+
+      String: Output to a CSV file for later consumption.
+
+      .PARAMETER IncludeHighFalsePositivesChecks
+
+      Switch: Forces Persistence Sniper to also call a number of functions with checks which are more difficult to filter and in turn can cause a lot of false positives.
+
       .EXAMPLE
 
-      Enumerate all persistence techniques implanted on the local machine.
+      Enumerate low false positive persistence techniques implanted on the local machine.
       Find-AllPersistence
 
       .EXAMPLE
 
-      Enumerate all persistence techniques implanted on the local machine and output to a CSV.
+      Enumerate low false positive persistence techniques implanted on the local machine and output to a CSV.
       Find-AllPersistence -OutputCSV .\persistences.csv
 
       .EXAMPLE
 
-      Enumerate all persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV.
+      Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV.
       Find-AllPersistence -DiffCSV .\persistences.csv
+
+      .EXAMPLE
+
+      Enumerate all persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV and output the findings on a CSV.
+      Find-AllPersistence -DiffCSV .\persistences.csv -OutputCSV .\findings.csv -IncludeHighFalsePositivesChecks
 
       .NOTES
 
@@ -52,12 +61,19 @@ function Find-AllPersistence
   Param(
     [Parameter(Mandatory = $false, Position = 0)]
     [System.String]
-    $OutputCSV = $null,
+    $DiffCSV = $null, 
     
-    [Parameter(Mandatory = $false, Position = 0)]
+    [Parameter(Mandatory = $false, Position = 2)]
     [System.String]
-    $DiffCSV = $null 
+    $OutputCSV = $null,  
+    
+    [Parameter(Mandatory = $false, Position = 1)]
+    [Switch]
+    $IncludeHighFalsePositivesChecks
   )  
+  
+  $persistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
+  $psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
   function New-PersistenceObject
   {
     param(
@@ -70,20 +86,16 @@ function Find-AllPersistence
       $Reference
     )
     $PersistenceObject = [PSCustomObject]@{
-      "Technique" = $Technique
-      "Classification" = $Classification
-      "Path" = $Path
-      "Value" = $Value
-      "Access Gained" = $AccessGained
-      "Note" = $Note
-      "Reference" = $Reference
+      'Technique'    = $Technique
+      'Classification' = $Classification
+      'Path'         = $Path
+      'Value'        = $Value
+      'Access Gained' = $AccessGained
+      'Note'         = $Note
+      'Reference'    = $Reference
     } 
     return $PersistenceObject
   }
-  
-  $persistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
-  $psProperties = @("PSChildName","PSDrive","PSParentPath","PSPath","PSProvider")
-  
   function Get-UsersRunAndRunOnce
   {
     Write-Verbose -Message "Getting users' Run properties..."
@@ -94,14 +106,17 @@ function Find-AllPersistence
       $runProps = Get-ItemProperty -Path "$currentUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue
       if($runProps)
       {
-        Write-Verbose "[!] Found properties under $sidHive user's Run key which deserve investigation!"
+        Write-Verbose -Message "[!] Found properties under $sidHive user's Run key which deserve investigation!"
         foreach ($prop in (Get-Member -Type NoteProperty -InputObject $runProps))
         {
-          if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-          $propPath = Convert-Path $runProps.PSPath
+          if($psProperties.Contains($prop.Name)) 
+          {
+            continue
+          } # skip the property if it's powershell built-in property
+          $propPath = Convert-Path -Path $runProps.PSPath
           $propPath += '\' + $prop.Name
-          $persistenceObject = New-PersistenceObject "Registry Run Key" "MITRE ATT&CK T1547.001" $propPath $runProps.($prop.Name) "User" "Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in." "https://attack.mitre.org/techniques/T1547/001/"
-          $null = $persistenceObjectArray.Add($persistenceObject)
+          $PersistenceObject = New-PersistenceObject -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
         }
       }
     }
@@ -114,14 +129,17 @@ function Find-AllPersistence
       $runOnceProps = Get-ItemProperty -Path "$currentUser\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -ErrorAction SilentlyContinue
       if($runOnceProps)
       {
-        Write-Verbose "[!] Found properties under $sidHive user's RunOnce key which deserve investigation!"
+        Write-Verbose -Message "[!] Found properties under $sidHive user's RunOnce key which deserve investigation!"
         foreach ($prop in (Get-Member -Type NoteProperty -InputObject $runOnceProps))
         {
-          if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-          $propPath = Convert-Path $runOnceProps.PSPath
+          if($psProperties.Contains($prop.Name)) 
+          {
+            continue
+          } # skip the property if it's powershell built-in property
+          $propPath = Convert-Path -Path $runOnceProps.PSPath
           $propPath += '\' + $prop.Name
-          $persistenceObject = New-PersistenceObject "Registry RunOnce Key" "MITRE ATT&CK T1547.001" $propPath $runOnceProps.($prop.Name) "User" "Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted." "https://attack.mitre.org/techniques/T1547/001/"
-          $null = $persistenceObjectArray.Add($persistenceObject)
+          $PersistenceObject = New-PersistenceObject -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
         }
       }
     }
@@ -134,14 +152,17 @@ function Find-AllPersistence
     $runProps = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue
     if($runProps)
     {
-      Write-Verbose "[!] Found properties under system's Run key which deserve investigation!"
+      Write-Verbose -Message "[!] Found properties under system's Run key which deserve investigation!"
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $runProps))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $runProps.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $runProps.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "Registry Run Key" "MITRE ATT&CK T1547.001" $propPath $runProps.($prop.Name) "System" "Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the system boots." "https://attack.mitre.org/techniques/T1547/001/"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained 'System' -Note 'Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the system boots.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     
@@ -150,14 +171,17 @@ function Find-AllPersistence
     $runOnceProps = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce' -ErrorAction SilentlyContinue
     if($runOnceProps)
     {
-      Write-Verbose "[!] Found properties under system's RunOnce key which deserve investigation!"
+      Write-Verbose -Message "[!] Found properties under system's RunOnce key which deserve investigation!"
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $runOnceProps))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $runOnceProps.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $runOnceProps.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "Registry RunOnce Key" "MITRE ATT&CK T1547.001" $propPath $runOnceProps.($prop.Name) "System" "Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the system boots and then deleted." "https://attack.mitre.org/techniques/T1547/001/"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained 'System' -Note 'Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the system boots and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     Write-Verbose -Message ''
@@ -183,17 +207,20 @@ function Find-AllPersistence
       
       if($foundDangerousIFEOpts)
       {
-        Write-Verbose '[!] Found subkeys under the Image File Execution Options key which deserve investigation!'
+        Write-Verbose -Message '[!] Found subkeys under the Image File Execution Options key which deserve investigation!'
         foreach($key in $IFEOptsDebuggers)
         {
-          $ifeProps =  Get-ItemProperty -Path Registry::$key -Name Debugger
+          $ifeProps = Get-ItemProperty -Path Registry::$key -Name Debugger
           foreach ($prop in (Get-Member -Type NoteProperty -InputObject $ifeProps))
           {
-            if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-            $propPath = Convert-Path $ifeProps.PSPath
+            if($psProperties.Contains($prop.Name)) 
+            {
+              continue
+            } # skip the property if it's powershell built-in property
+            $propPath = Convert-Path -Path $ifeProps.PSPath
             $propPath += '\' + $prop.Name
-            $persistenceObject = New-PersistenceObject "Image File Execution Options" "MITRE ATT&CK T1546.012" $propPath $ifeProps.($prop.Name) "System/User" "Executables in the Debugger property of a subkey of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options are run instead of the process corresponding to the subkey. Gained access depends on whose context the debugged process runs in." "https://attack.mitre.org/techniques/T1546/012/"
-            $null = $persistenceObjectArray.Add($persistenceObject)
+            $PersistenceObject = New-PersistenceObject -Technique 'Image File Execution Options' -Classification 'MITRE ATT&CK T1546.012' -Path $propPath -Value $ifeProps.($prop.Name) -AccessGained 'System/User' -Note 'Executables in the Debugger property of a subkey of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\ are run instead of the program corresponding to the subkey. Gained access depends on whose context the debugged process runs in.' -Reference 'https://attack.mitre.org/techniques/T1546/012/'
+            $null = $persistenceObjectArray.Add($PersistenceObject)
           }
         }
       }
@@ -224,15 +251,18 @@ function Find-AllPersistence
         Write-Verbose -Message '[!] Found subkeys under HKLM:\SYSTEM\CurrentControlSet\Control\ContentIndex\Language which deserve investigation!'
         foreach($key in $KeysWithDllOverridePath)
         {
-          $properties = Get-ItemProperty -Path Registry::$key | Select-Object *DLLPathOverride,PS*
+          $properties = Get-ItemProperty -Path Registry::$key | Select-Object -Property *DLLPathOverride, PS*
           foreach ($prop in (Get-Member -Type NoteProperty -InputObject $properties))
           {
-            if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-            $propPath = Convert-Path $properties.PSPath
+            if($psProperties.Contains($prop.Name)) 
+            {
+              continue
+            } # skip the property if it's powershell built-in property
+            $propPath = Convert-Path -Path $properties.PSPath
             $propPath += '\' + $prop.Name
-            $persistenceObject = New-PersistenceObject "Natural Language Development Platform 6 DLL Override Path" "Hexacorn Technique N.98" $propPath $properties.($prop.Name) "System" "DLLs listed in properties of subkeys of HKLM:\SYSTEM\CurrentControlSet\Control\ContentIndex\Language are loaded via LoadLibrary executed by SearchIndexer.exe" "https://www.hexacorn.com/blog/2018/12/30/beyond-good-ol-run-key-part-98/"
-            Write-Verbose $persistenceObject
-            $null = $persistenceObjectArray.Add($persistenceObject)
+            $PersistenceObject = New-PersistenceObject -Technique 'Natural Language Development Platform 6 DLL Override Path' -Classification 'Hexacorn Technique N.98' -Path $propPath -Value $properties.($prop.Name) -AccessGained 'System' -Note 'DLLs listed in properties of subkeys of HKLM:\SYSTEM\CurrentControlSet\Control\ContentIndex\Language are loaded via LoadLibrary executed by SearchIndexer.exe' -Reference 'https://www.hexacorn.com/blog/2018/12/30/beyond-good-ol-run-key-part-98/'
+            Write-Verbose -Message $PersistenceObject
+            $null = $persistenceObjectArray.Add($PersistenceObject)
           }
         }
       }
@@ -249,11 +279,31 @@ function Find-AllPersistence
       Write-Verbose -Message '[!] Found properties under the AeDebug key which deserve investigation!'
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $aeDebugger))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $aeDebugger.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $aeDebugger.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "AEDebug Custom Debugger" "Hexacorn Technique N.4" $propPath $aeDebugger.($prop.Name) "System/User" "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction." "https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique 'AEDebug Custom Debugger' -Classification 'Hexacorn Technique N.4' -Path $propPath -Value $aeDebugger.($prop.Name) -AccessGained 'System/User' -Note "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction. A value of 'C:\Windows\system32\vsjitdebugger.exe' might be a false positive if you have Visual Studio Community installed." -Reference 'https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      }
+    }
+    
+    $aeDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug' -Name Debugger -ErrorAction SilentlyContinue
+    if($aeDebugger)
+    {
+      Write-Verbose -Message '[!] Found properties under the Wow6432Node AeDebug key which deserve investigation!'
+      foreach ($prop in (Get-Member -Type NoteProperty -InputObject $aeDebugger))
+      {
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $aeDebugger.PSPath
+        $propPath += '\' + $prop.Name
+        $PersistenceObject = New-PersistenceObject -Technique 'Wow6432Node AEDebug Custom Debugger' -Classification 'Hexacorn Technique N.4' -Path $propPath -Value $aeDebugger.($prop.Name) -AccessGained 'System/User' -Note "The executable in the Debugger property of HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a 32 bit process on a 64 bit system crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction. A value of 'C:\Windows\system32\vsjitdebugger.exe' might be a false positive if you have Visual Studio Community installed." -Reference 'https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     Write-Verbose -Message '' 
@@ -265,15 +315,18 @@ function Find-AllPersistence
     $werfaultDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs' -Name Debugger -ErrorAction SilentlyContinue
     if($werfaultDebugger)
     {
-      Write-Verbose -Message "[!] Found a Debugger property under the WerFault Hangs key which deserve investigation!"
-      $werfaultDebugger | Select-Object -Property Debugger,PS*
+      Write-Verbose -Message '[!] Found a Debugger property under the WerFault Hangs key which deserve investigation!'
+      $werfaultDebugger | Select-Object -Property Debugger, PS*
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $werfaultDebugger))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $werfaultDebugger.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $werfaultDebugger.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "Windows Error Reporting Debugger" "Hexacorn Technique N.116" $propPath $werfaultDebugger.($prop.Name) "System" "The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs is spawned by WerFault.exe when a process crashes." "https://www.hexacorn.com/blog/2019/09/20/beyond-good-ol-run-key-part-116/"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique 'Windows Error Reporting Debugger' -Classification 'Hexacorn Technique N.116' -Path $propPath -Value $werfaultDebugger.($prop.Name) -AccessGained 'System' -Note 'The executable in the Debugger property of HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs is spawned by WerFault.exe when a process crashes.' -Reference 'https://www.hexacorn.com/blog/2019/09/20/beyond-good-ol-run-key-part-116/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     
@@ -282,15 +335,18 @@ function Find-AllPersistence
     $werfaultReflectDebugger = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs' -Name ReflectDebugger -ErrorAction SilentlyContinue
     if($werfaultReflectDebugger)
     {
-      Write-Verbose -Message "[!] Found a ReflectDebugger property under the WerFault Hangs key which deserve investigation!"
-      $werfaultReflectDebugger | Select-Object -Property ReflectDebugger,PS*
+      Write-Verbose -Message '[!] Found a ReflectDebugger property under the WerFault Hangs key which deserve investigation!'
+      $werfaultReflectDebugger | Select-Object -Property ReflectDebugger, PS*
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $werfaultReflectDebugger))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $werfaultReflectDebugger.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $werfaultReflectDebugger.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "Windows Error Reporting ReflectDebugger" "Hexacorn Technique N.85" $propPath $werfaultReflectDebugger.($prop.Name) "System" "The executable in the ReflectDebugger property of HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs is spawned by WerFault.exe when called with the -pr argument." "https://www.hexacorn.com/blog/2018/08/31/beyond-good-ol-run-key-part-85/"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique 'Windows Error Reporting ReflectDebugger' -Classification 'Hexacorn Technique N.85' -Path $propPath -Value $werfaultReflectDebugger.($prop.Name) -AccessGained 'System' -Note 'The executable in the ReflectDebugger property of HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs is spawned by WerFault.exe when called with the -pr argument.' -Reference 'https://www.hexacorn.com/blog/2018/08/31/beyond-good-ol-run-key-part-85/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     
@@ -310,11 +366,14 @@ function Find-AllPersistence
         Write-Verbose -Message "[!] $sidHive user's cmd.exe's AutoRun property is set and deserves investigation!"
         foreach ($prop in (Get-Member -Type NoteProperty -InputObject $autorun))
         {
-          if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-          $propPath = Convert-Path $autorun.PSPath
+          if($psProperties.Contains($prop.Name)) 
+          {
+            continue
+          } # skip the property if it's powershell built-in property
+          $propPath = Convert-Path -Path $autorun.PSPath
           $propPath += '\' + $prop.Name
-          $persistenceObject = New-PersistenceObject "Users' cmd.exe AutoRun key" "Uncatalogued Technique N.1" $propPath $autorun.($prop.Name) "User" "The executable in the AutoRun property of HKEY_USERS\<User_SID>\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument." "https://persistence-info.github.io/Data/cmdautorun.html"
-          $null = $persistenceObjectArray.Add($persistenceObject)
+          $PersistenceObject = New-PersistenceObject -Technique "Users' cmd.exe AutoRun key" -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained 'User' -Note 'The executable in the AutoRun property of HKEY_USERS\<User_SID>\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
         }
       }
     }
@@ -330,11 +389,14 @@ function Find-AllPersistence
       Write-Verbose -Message "[!] System's cmd.exe's AutoRun property is set and deserves investigation!"
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $autorun))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $autorun.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $autorun.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "System's cmd.exe AutoRun key" "Uncatalogued Technique N.1" $propPath $autorun.($prop.Name) "User" "The executable in the AutoRun property of HKEY_LOCAL_MACHINE\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument." "https://persistence-info.github.io/Data/cmdautorun.html"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique "System's cmd.exe AutoRun key" -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained 'User' -Note 'The executable in the AutoRun property of HKEY_LOCAL_MACHINE\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     
@@ -350,11 +412,14 @@ function Find-AllPersistence
       Write-Verbose -Message "[!] Current user's Load property is set and deserves investigation!"
       foreach ($prop in (Get-Member -Type NoteProperty -InputObject $loadKey))
       {
-        if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-        $propPath = Convert-Path $loadKey.PSPath
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $loadKey.PSPath
         $propPath += '\' + $prop.Name
-        $persistenceObject = New-PersistenceObject "Explorer Load Property" "Uncatalogued Technique N.2" $propPath $loadKey.($prop.Name) "User" "The executable in the Load property of HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time." "https://persistence-info.github.io/Data/windowsload.html"
-        $null = $persistenceObjectArray.Add($persistenceObject)
+        $PersistenceObject = New-PersistenceObject -Technique 'Explorer Load Property' -Classification 'Uncatalogued Technique N.2' -Path $propPath -Value $loadKey.($prop.Name) -AccessGained 'User' -Note 'The executable in the Load property of HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time.' -Reference 'https://persistence-info.github.io/Data/windowsload.html'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
     }
     Write-Verbose -Message ''
@@ -371,11 +436,14 @@ function Find-AllPersistence
         Write-Verbose -Message "[!] Winlogon's Userinit property is set to a non-standard value and deserves investigation!"
         foreach ($prop in (Get-Member -Type NoteProperty -InputObject $userinit))
         {
-          if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-          $propPath = Convert-Path $userinit.PSPath
+          if($psProperties.Contains($prop.Name)) 
+          {
+            continue
+          } # skip the property if it's powershell built-in property
+          $propPath = Convert-Path -Path $userinit.PSPath
           $propPath += '\' + $prop.Name
-          $persistenceObject = New-PersistenceObject "Winlogon Userinit Property" "MITRE ATT&CK T1547.004" $propPath $userinit.($prop.Name) "User" "The executables in the Userinit property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run at login time by any user. Normally this property should be set to 'C:\Windows\system32\userinit.exe,' without any further executables appended." "https://attack.mitre.org/techniques/T1547/004/"
-          $null = $persistenceObjectArray.Add($persistenceObject)
+          $PersistenceObject = New-PersistenceObject -Technique 'Winlogon Userinit Property' -Classification 'MITRE ATT&CK T1547.004' -Path $propPath -Value $userinit.($prop.Name) -AccessGained 'User' -Note "The executables in the Userinit property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run at login time by any user. Normally this property should be set to 'C:\Windows\system32\userinit.exe,' without any further executables appended." -Reference 'https://attack.mitre.org/techniques/T1547/004/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
         }
       }
     }
@@ -388,7 +456,7 @@ function Find-AllPersistence
     $shell = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name Shell -ErrorAction SilentlyContinue
     if(!$shell)
     {
-      Write-Verbose -Message '[!] No Userinit property found, it may be an error...'
+      Write-Verbose -Message '[!] No Shell property found, it may be an error...'
     }
     else 
     {
@@ -397,13 +465,15 @@ function Find-AllPersistence
         Write-Verbose -Message "[!] Winlogon's Shell property is set to a non-standard value and deserves investigation!"
         foreach ($prop in (Get-Member -Type NoteProperty -InputObject $shell))
         {
-          if($psProperties.Contains($prop.Name)) {continue} # skip the property if it's powershell built-in property
-          $propPath = Convert-Path $shell.PSPath
+          if($psProperties.Contains($prop.Name)) 
+          {
+            continue
+          } # skip the property if it's a powershell built-in property
+          $propPath = Convert-Path -Path $shell.PSPath
           $propPath += '\' + $prop.Name
-          $persistenceObject = New-PersistenceObject "Winlogon Shell Property" "MITRE ATT&CK T1547.004" $propPath $shell.($prop.Name) "User" "The executables in the Shell property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run as the default shells for any users. Normally this property should be set to 'explorer.exe' without any further executables appended." "https://attack.mitre.org/techniques/T1547/004/"
-          $null = $persistenceObjectArray.Add($persistenceObject)
+          $PersistenceObject = New-PersistenceObject -Technique 'Winlogon Shell Property' -Classification 'MITRE ATT&CK T1547.004' -Path $propPath -Value $shell.($prop.Name) -AccessGained 'User' -Note "The executables in the Shell property of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run as the default shells for any users. Normally this property should be set to 'explorer.exe' without any further executables appended." -Reference 'https://attack.mitre.org/techniques/T1547/004/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
         }
-        
       }
     }
     Write-Verbose -Message ''
@@ -419,7 +489,10 @@ function Find-AllPersistence
       foreach($terminalDirectory in $terminalDirectories)
       {
         $settingsFile = Get-Content -Raw -Path "$($terminalDirectory.FullName)\LocalState\settings.json" | ConvertFrom-Json
-        if($settingsFile.startOnUserLogin -ne 'true'){ return } # return if startOnUserLogin is not present
+        if($settingsFile.startOnUserLogin -ne 'true')
+        {
+          return 
+        } # return if startOnUserLogin is not present
         $defaultProfileGuid = $settingsFile.defaultProfile
         $found = $false 
         foreach($profileList in $settingsFile.profiles)
@@ -429,22 +502,87 @@ function Find-AllPersistence
             if($profile.guid -eq $defaultProfileGuid)
             {
               Write-Verbose -Message "[!] The file $($terminalDirectory.FullName)\LocalState\settings.json has the startOnUserLogin key set, the default profile has GUID $($profile.guid)!"
-              if($profile.commandline){ $executable = $profile.commandline }
-              else { $executable = $profile.name }
+              if($profile.commandline)
+              {
+                $executable = $profile.commandline 
+              }
+              else 
+              {
+                $executable = $profile.name 
+              }
               
-              $persistenceObject = New-PersistenceObject "Windows Terminal startOnUserLogin" "Uncatalogued Technique N.3" "$($terminalDirectory.FullName)\LocalState\settings.json" "$executable" "User" "The executable specified as value of the key `"commandline`" of a profile which has the `"startOnUserLogin`" key set to `"true`" in the Windows Terminal's settings.json of a user is run every time that user logs in." "https://twitter.com/nas_bench/status/1550836225652686848"
-              $null = $persistenceObjectArray.Add($persistenceObject)
+              $PersistenceObject = New-PersistenceObject -Technique 'Windows Terminal startOnUserLogin' -Classification 'Uncatalogued Technique N.3' -Path "$($terminalDirectory.FullName)\LocalState\settings.json" -Value "$executable" -AccessGained 'User' -Note "The executable specified as value of the key `"commandline`" of a profile which has the `"startOnUserLogin`" key set to `"true`" in the Windows Terminal's settings.json of a user is run every time that user logs in." -Reference 'https://twitter.com/nas_bench/status/1550836225652686848'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
               $found = $true
               break
             }
           }
-          if ($found) { break } 
+          if ($found) 
+          {
+            break 
+          } 
         }
       }
     }    
     Write-Verbose -Message ''
   }
   
+  function Get-AppCertDlls
+  {
+    Write-Verbose -Message 'Getting AppCertDlls properties...'
+    $appCertDllsProps = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls' -ErrorAction SilentlyContinue
+    if($appCertDllsProps)
+    {
+      Write-Verbose -Message "[!] Found properties under system's AppCertDlls key which deserve investigation!"
+      foreach ($prop in (Get-Member -Type NoteProperty -InputObject $appCertDllsProps))
+      {
+        if($psProperties.Contains($prop.Name)) 
+        {
+          continue
+        } # skip the property if it's powershell built-in property
+        $propPath = Convert-Path -Path $appCertDllsProps.PSPath
+        $propPath += '\' + $prop.Name
+        $PersistenceObject = New-PersistenceObject -Technique 'AppCertDlls' -Classification 'MITRE ATT&CK T1546.009' -Path $propPath -Value $appCertDllsProps.($prop.Name) -AccessGained 'System' -Note 'DLLs in properties of the key HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls are loaded by every process that loads the Win32 API at process creation.' -Reference 'https://attack.mitre.org/techniques/T1546/009/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      }
+    }
+    Write-Verbose -Message ''
+  }
+  
+  function Get-AppPaths
+  {
+    Write-Verbose -Message 'Getting App Paths inside the registry...'
+    $appPathsKeys = Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths' -ErrorAction SilentlyContinue
+    foreach($key in $appPathsKeys)
+    {
+      $appPath = Get-ItemProperty -Path Registry::$key -Name '(Default)' -ErrorAction SilentlyContinue
+      if($appPath) 
+      { 
+        Write-Verbose -Message '[!] Found subkeys under the App Paths key which deserve investigation!'
+        $propPath = Convert-Path -Path $key.PSPath
+        $propPath += '\' + $appPath.Name
+        $PersistenceObject = New-PersistenceObject -Technique 'App Paths' -Classification 'Hexacorn Technique N.3' -Path "$propPath(Default)" -Value $appPath.'(Default)' -AccessGained 'System/User' -Note 'Executables in the (Default) property of a subkey of HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\ are run instead of the program corresponding to the subkey. Gained access depends on whose context the process runs in. Be aware this might be a false positive.' -Reference 'https://www.hexacorn.com/blog/2013/01/19/beyond-good-ol-run-key-part-3/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      } 
+    }
+    Write-Verbose -Message ''
+  }
+  
+  function Get-TermServiceDlls
+  {
+    Write-Verbose -Message 'Getting Terminal Service DLLs inside the registry...'
+    $serviceDll = (Get-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\TermService\Parameters').GetValue('ServiceDll', $null, 'DoNotExpandEnvironmentNames') # .NET wizardry to prevent Powershell from expanding REG_EXPAND_SZ properties
+    if($serviceDll -ne '%SystemRoot%\System32\termsrv.dll') 
+    { 
+      Write-Verbose -Message '[!] Found subkeys under the Services key which deserve investigation!'
+      $propPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\TermService\Parameters\'
+      $PersistenceObject = New-PersistenceObject -Technique 'TermService ServiceDll Hijacking' -Classification 'MITRE ATT&CK T1505.005' -Path $propPath -Value $serviceDll -AccessGained 'System' -Note "DLLs in the ServiceDll property of HKLM:\SYSTEM\CurrentControlSet\Services\TermService\Parameters are loaded in the corresponding service. If something different from '%SystemRoot%\System32\termsrv.dll' is being loaded, something sketchy might be happening..." -Reference 'https://attack.mitre.org/techniques/T1505/005/'
+      $null = $persistenceObjectArray.Add($PersistenceObject)
+    } 
+    
+    Write-Verbose -Message ''
+  }
+
   Write-Verbose -Message 'Starting execution...'
 
   Get-UsersRunAndRunOnce
@@ -459,11 +597,19 @@ function Find-AllPersistence
   Get-SystemWinlogonUserinit
   Get-SystemWinlogonShell
   Get-TerminalProfileStartOnUserLogin
+  Get-AppCertDlls
+  Get-TermServiceDlls
+  
+  if($IncludeHighFalsePositivesChecks.IsPresent)
+  {
+    Write-Verbose -Message 'You have used the -IncludeHighFalsePositivesChecks switch, this may generate a lot of false positives since it includes checks with results which are difficult to filter programmatically...'
+    Get-AppPaths
+  }
   
   # Use Input CSV to make a diff of the results and only show us the persistences implanted on the local machine which are not in the CSV
   if($DiffCSV)
   {
-    Write-Verbose "Diffing found persistences with the ones in the input CSV..."
+    Write-Verbose -Message 'Diffing found persistences with the ones in the input CSV...'
     $importedPersistenceObjectArray = Import-Csv -Path $DiffCSV -ErrorAction Stop
     $newPersistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
     foreach($localPersistence in $persistenceObjectArray)
@@ -487,7 +633,9 @@ function Find-AllPersistence
   
   if($OutputCSV)
   {
-    $persistenceObjectArray | ConvertTo-Csv | Out-File -FilePath $OutputCSV -ErrorAction Stop
+    $persistenceObjectArray |
+    ConvertTo-Csv |
+    Out-File -FilePath $OutputCSV -ErrorAction Stop
   }
   
   Write-Verbose -Message 'Execution finished, outputting results...'  
