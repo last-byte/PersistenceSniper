@@ -73,7 +73,7 @@ There are literally hundreds of already public persistence techniques, with more
 - [x] [Windows Terminal startOnUserLogin](https://twitter.com/nas_bench/status/1550836225652686848)
 - [x] [AppCertDlls DLL Injection](https://attack.mitre.org/techniques/T1546/009/)
 - [x] [App Paths Hijacking](https://www.hexacorn.com/blog/2013/01/19/beyond-good-ol-run-key-part-3/)
-- [x] [Termservice ServiceDll Hijacking](https://attack.mitre.org/techniques/T1505/005/)
+- [x] [Services' ServiceDll Hijacking](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
