@@ -74,7 +74,14 @@ function Find-AllPersistence
   
   $psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
   $persistenceObjectArray = [Collections.ArrayList]::new()
-  
+  $systemAndUsersHives = [Collections.ArrayList]::new()
+  $systemHive = (Get-Item Registry::HKEY_LOCAL_MACHINE).PSpath
+  $null = $systemAndUsersHives.Add($systemHive)
+  $sids = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue
+  foreach($sid in $sids)
+  {
+    $null = $systemAndUsersHives.Add($sid.PSpath)
+  }
   function New-PersistenceObject
   {
     param(
@@ -117,17 +124,17 @@ function Find-AllPersistence
     } 
     return $PersistenceObject
   }
-  function Get-UsersRunAndRunOnce
+
+  function Get-RunAndRunOnce
   {
-    Write-Verbose -Message "Getting users' Run properties..."
-    $hkeyUsers = Get-ChildItem -Path Registry::HKEY_USERS
-    foreach($sidHive in $hkeyUsers)
+    Write-Verbose -Message "Getting Run properties..."
+    foreach($hive in $systemAndUsersHives)
     {
-      $currentUser = "Registry::$sidHive"
+      $currentUser = $hive
       $runProps = Get-ItemProperty -Path "$currentUser\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue
       if($runProps)
       {
-        Write-Verbose -Message "[!] Found properties under $sidHive user's Run key which deserve investigation!"
+        Write-Verbose -Message "[!] Found properties under $(Convert-Path -Path $hive)'s Run key which deserve investigation!"
         foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $runProps))
         {
           if($psProperties.Contains($prop.Name)) 
@@ -136,7 +143,7 @@ function Find-AllPersistence
           } # skip the property if it's powershell built-in property
           $propPath = Convert-Path -Path $runProps.PSPath
           $propPath += '\' + $prop.Name
-          $PersistenceObject = New-PersistenceObject -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $PersistenceObject = New-PersistenceObject -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key (HKLM:|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
         }
@@ -144,14 +151,14 @@ function Find-AllPersistence
     }
     
     Write-Verbose -Message ''
-    Write-Verbose -Message "Getting users' RunOnce properties..."
-    foreach($sidHive in $hkeyUsers)
+    Write-Verbose -Message "Getting RunOnce properties..."
+    foreach($hive in $systemAndUsersHives)
     {
-      $currentUser = "Registry::$sidHive"
+      $currentUser = $hive
       $runOnceProps = Get-ItemProperty -Path "$currentUser\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -ErrorAction SilentlyContinue
       if($runOnceProps)
       {
-        Write-Verbose -Message "[!] Found properties under $sidHive user's RunOnce key which deserve investigation!"
+        Write-Verbose -Message "[!] Found properties under $(Convert-Path -Path $hive)'s RunOnce key which deserve investigation!"
         foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $runOnceProps))
         {
           if($psProperties.Contains($prop.Name)) 
@@ -160,53 +167,10 @@ function Find-AllPersistence
           } # skip the property if it's powershell built-in property
           $propPath = Convert-Path -Path $runOnceProps.PSPath
           $propPath += '\' + $prop.Name
-          $PersistenceObject = New-PersistenceObject -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key HKEY_USERS\<User_SID>\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $PersistenceObject = New-PersistenceObject -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key (HKLM:|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
         }
-      }
-    }
-    Write-Verbose -Message ''
-  }
-  
-  function Get-SystemRunAndRunOnce
-  {
-    Write-Verbose -Message "Getting system's Run properties..."
-    $runProps = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue
-    if($runProps)
-    {
-      Write-Verbose -Message "[!] Found properties under system's Run key which deserve investigation!"
-      foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $runProps))
-      {
-        if($psProperties.Contains($prop.Name)) 
-        {
-          continue
-        } # skip the property if it's powershell built-in property
-        $propPath = Convert-Path -Path $runProps.PSPath
-        $propPath += '\' + $prop.Name
-        $PersistenceObject = New-PersistenceObject -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained 'System' -Note 'Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the system boots.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
-        $null = $persistenceObjectArray.Add($PersistenceObject)
-        $PersistenceObject
-      }
-    }
-    
-    Write-Verbose -Message ''
-    Write-Verbose -Message "Getting system's RunOnce properties..."
-    $runOnceProps = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce' -ErrorAction SilentlyContinue
-    if($runOnceProps)
-    {
-      Write-Verbose -Message "[!] Found properties under system's RunOnce key which deserve investigation!"
-      foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $runOnceProps))
-      {
-        if($psProperties.Contains($prop.Name)) 
-        {
-          continue
-        } # skip the property if it's powershell built-in property
-        $propPath = Convert-Path -Path $runOnceProps.PSPath
-        $propPath += '\' + $prop.Name
-        $PersistenceObject = New-PersistenceObject -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained 'System' -Note 'Executables in properties of the key HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the system boots and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
-        $null = $persistenceObjectArray.Add($PersistenceObject)
-        $PersistenceObject
       }
     }
     Write-Verbose -Message ''
@@ -382,17 +346,16 @@ function Find-AllPersistence
     Write-Verbose -Message ''
   }
 
-  function Get-UsersCmdAutoRun
+  function Get-CmdAutoRun
   {
-    Write-Verbose -Message "Getting users' cmd.exe's AutoRun property..."
-    $hkeyUsers = Get-ChildItem -Path Registry::HKEY_USERS
-    foreach($sidHive in $hkeyUsers)
+    Write-Verbose -Message "Getting Command Processor's AutoRun property..."
+    foreach($sidHive in $systemAndUsersHives)
     {
-      $currentUser = "Registry::$sidHive"
+      $currentUser = $sidHive
       $autorun = Get-ItemProperty -Path "$currentUser\Software\Microsoft\Command Processor" -Name AutoRun -ErrorAction SilentlyContinue
       if($autorun)
       {
-        Write-Verbose -Message "[!] $sidHive user's cmd.exe's AutoRun property is set and deserves investigation!"
+        Write-Verbose -Message "[!] $(Convert-Path -Path $sidHive) Command Processor's AutoRun property is set and deserves investigation!"
         foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $autorun))
         {
           if($psProperties.Contains($prop.Name)) 
@@ -401,39 +364,14 @@ function Find-AllPersistence
           } # skip the property if it's powershell built-in property
           $propPath = Convert-Path -Path $autorun.PSPath
           $propPath += '\' + $prop.Name
-          $PersistenceObject = New-PersistenceObject -Technique "Users' cmd.exe AutoRun key" -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained 'User' -Note 'The executable in the AutoRun property of HKEY_USERS\<User_SID>\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
+          $PersistenceObject = New-PersistenceObject -Technique "Command Processor AutoRun key" -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained 'User' -Note 'The executable in the AutoRun property of (HKLM:|HKEY_USERS\<SID>)\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
         }
       }
     }
     Write-Verbose -Message ''   
-  }
-  
-  function Get-SystemCmdAutoRun
-  {
-    Write-Verbose -Message "Getting system's cmd.exe's AutoRun property..."
-    $autorun = Get-ItemProperty -Path 'HKLM:\Software\Microsoft\Command Processor' -Name AutoRun -ErrorAction SilentlyContinue
-    if($autorun)
-    {
-      Write-Verbose -Message "[!] System's cmd.exe's AutoRun property is set and deserves investigation!"
-      foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $autorun))
-      {
-        if($psProperties.Contains($prop.Name)) 
-        {
-          continue
-        } # skip the property if it's powershell built-in property
-        $propPath = Convert-Path -Path $autorun.PSPath
-        $propPath += '\' + $prop.Name
-        $PersistenceObject = New-PersistenceObject -Technique "System's cmd.exe AutoRun key" -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained 'User' -Note 'The executable in the AutoRun property of HKEY_LOCAL_MACHINE\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
-        $null = $persistenceObjectArray.Add($PersistenceObject)
-        $PersistenceObject
-      }
-    }
-    
-    Write-Verbose -Message ''
-  }
-  
+  }  
   function Get-ExplorerLoad
   {
     Write-Verbose -Message "Getting current user's Explorer's Load property..."
@@ -694,14 +632,12 @@ function Find-AllPersistence
   
   Write-Verbose -Message 'Starting execution...'
 
-  Get-UsersRunAndRunOnce
-  Get-SystemRunAndRunOnce
+  Get-RunAndRunOnce
   Get-ImageFileExecutionOptions
   Get-NLDPDllOverridePath
   Get-AeDebug
   Get-WerFaultHangs
-  Get-UsersCmdAutoRun
-  Get-SystemCmdAutoRun
+  Get-CmdAutoRun
   Get-ExplorerLoad
   Get-SystemWinlogonUserinit
   Get-SystemWinlogonShell
@@ -756,7 +692,7 @@ function Get-ServiceDllsFalsePositive
 {
   Write-Verbose -Message "Outputting current Services' ServiceDll configuration to use as false positives..."
   $serviceDllsTable = @{}
-  $services = Get-ChildItem -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\'
+  $services = Get-ChildItem -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\' -ErrorAction SilentlyContinue
   foreach($service in $services)
   {
     $serviceKey = Get-Item -Path Registry::$service\Parameters -ErrorAction SilentlyContinue
@@ -776,8 +712,8 @@ function Get-ServiceDllsFalsePositive
 # SIG # Begin signature block
   # MIID7QYJKoZIhvcNAQcCoIID3jCCA9oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
   # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-  # AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBgMqUaYoQ8et64iH+l4WvNpT
-  # 7nugggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
+  # AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtakTPkyc+TJskPFa2MWEQrbi
+  # ehygggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
   # AQUFADAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YTAeFw0yMjA3MTkxNDEz
   # MDJaFw0yNjA3MTkwMDAwMDBaMBwxGjAYBgNVBAMMEUZlZGVyaWNvIExhZ3Jhc3Rh
   # MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDjMbaODrvLdzZbpl4zEtqUXMXl
@@ -791,9 +727,9 @@ function Get-ServiceDllsFalsePositive
   # UDCCAUwCAQEwMDAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YQIQF+BNQBpc
   # W6RBBEo1bSFRGzAJBgUrDgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKA
   # ADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYK
-  # KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUxWu9438wV4RNpC4M/S4clEMwyfkw
-  # DQYJKoZIhvcNAQEBBQAEgYBl0UMI4TF6i4BKvRYXjV1+7sKBsS4K8Wg9N27wnK92
-  # S5x3jM2xxAl/PI3Stdw+hEKFIqP7KgKHYTidC9EuU9RUI38rxSjkJd6hPWwZB+dm
-  # yNfLzxgGdg03dnpwcFDTdLPoNNIRbRI7zreeEdhmYZ2m3ro2MXDENqVgz24MdfR9
-  # ww==
+  # KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUbeNmJDUOwhv1Sep0ymWGOliiBFsw
+  # DQYJKoZIhvcNAQEBBQAEgYDBE3ltUloURmS564RQLBNORu5xsk05wB6nR2mEq0vo
+  # J8Oho6RkPkPHgmNy3Pv5W861I0zsF3hre/UFuCH7ajXq4HspAOslE/YSHNqpKXPi
+  # FnUIqBDpcw0AveKVeRlxgEtt7BH0yz6/2AP0pHBGIh9jHqA2+ubiSIdWocQeuRhf
+  # Mw==
 # SIG # End signature block
