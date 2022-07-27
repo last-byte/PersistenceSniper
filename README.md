@@ -75,6 +75,7 @@ There are literally hundreds of already public persistence techniques, with more
 - [x] [App Paths Hijacking](https://www.hexacorn.com/blog/2013/01/19/beyond-good-ol-run-key-part-3/)
 - [x] [Services' ServiceDll Hijacking](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/)
 - [x] [Group Policy Extensions DLLs](https://persistence-info.github.io/Data/gpoextension.html)
+- [x] [Winlogon MPNotify](https://persistence-info.github.io/Data/mpnotify.html)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:

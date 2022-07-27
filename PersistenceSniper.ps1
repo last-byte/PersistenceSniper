@@ -677,6 +677,21 @@ function Find-AllPersistence
     Write-Verbose -Message ''
   }
   
+  function Get-WinlogonMPNotify
+  {
+    Write-Verbose -Message 'Getting Winlogon MPNotify property...'
+    $mpnotify = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name mpnotify -ErrorAction SilentlyContinue
+    if($mpnotify)
+    {
+      Write-Verbose -Message "[!] Found MPnotify property under system's Winlogon key!"
+      $propPath = (Convert-Path -Path $mpnotify.PSPath) + '\mpnotify'
+      $PersistenceObject = New-PersistenceObject -Technique 'Winlogon MPNotify Executable' -Classification 'Uncatalogued Technique N.5' -Path $propPath -Value $mpnotify.mpnotify -AccessGained 'System' -Note 'The executable specified in the "mpnotify" property of the HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon key is run by Winlogon when a user logs on. After the timeout (30s) the process and its child processes are terminated.' -Reference 'https://persistence-info.github.io/Data/mpnotify.html'
+      $null = $persistenceObjectArray.Add($PersistenceObject)
+      $PersistenceObject
+    }
+    Write-Verbose -Message ''
+  }
+  
   Write-Verbose -Message 'Starting execution...'
 
   Get-UsersRunAndRunOnce
@@ -694,6 +709,7 @@ function Find-AllPersistence
   Get-AppCertDlls
   Get-ServiceDlls
   Get-GPExtensionDlls
+  Get-WinlogonMPNotify
   
   if($IncludeHighFalsePositivesChecks.IsPresent)
   {
@@ -758,26 +774,26 @@ function Get-ServiceDllsFalsePositive
 }
 
 # SIG # Begin signature block
-# MIID7QYJKoZIhvcNAQcCoIID3jCCA9oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBRhH1uBUO55nX76PZvH2k/5u
-# PRSgggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
-# AQUFADAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YTAeFw0yMjA3MTkxNDEz
-# MDJaFw0yNjA3MTkwMDAwMDBaMBwxGjAYBgNVBAMMEUZlZGVyaWNvIExhZ3Jhc3Rh
-# MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDjMbaODrvLdzZbpl4zEtqUXMXl
-# taFuA8vnquV5373I4Tc8Obx7U18WvEfknFLQoGGzKV8M9d9kDX9NfTRydJmEksLB
-# eFuMasI+U1N71Tn4dpN0LW6PKbE35XVZtZ10LggrozqSbk9giv1bJwTTz4ZeNpJ/
-# ytHlV6zIwcmap1Dt4QIDAQABo0YwRDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNV
-# HQ4EFgQUEvzrfw+6jTXcizBEwSWbnNZCGu4wDgYDVR0PAQH/BAQDAgeAMA0GCSqG
-# SIb3DQEBBQUAA4GBAJNKf/cEn54Sh9H3iAy0+X3hlfLtRu0UamTNtgmi1Ul7qEth
-# EfOGjDtjdYj8GD97blI3z3aGWeLQkoGzELJPG2gTfsORgIN4382YwzM7AhgN++Uv
-# 2Bmwqlzi4CtqAIg+Owi15RlOVnNSj0hw9KqEVxw4M2D9sTiKpfYCIrhhPQ8cMYIB
-# UDCCAUwCAQEwMDAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YQIQF+BNQBpc
-# W6RBBEo1bSFRGzAJBgUrDgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKA
-# ADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYK
-# KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUnLIQ4//i2kpf1ZDozW91DEwQYdYw
-# DQYJKoZIhvcNAQEBBQAEgYBjB3MSgOWrAFunSyjMxtZkYMf/j66FGvTyJkcp42rT
-# Wa1hR99LEDXBq9oFh1Gqmsp5gUa3gMHEoTTc4yimnSCJzZEGL7g8CG+EdSAqHOJH
-# xRIlCthJmvCnxmiHnYCWvkl/s1zkfJtVyfOlubiQM9BGJEiF5JfQaa096/+1IJjv
-# bQ==
+  # MIID7QYJKoZIhvcNAQcCoIID3jCCA9oCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+  # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+  # AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUBgMqUaYoQ8et64iH+l4WvNpT
+  # 7nugggIHMIICAzCCAWygAwIBAgIQF+BNQBpcW6RBBEo1bSFRGzANBgkqhkiG9w0B
+  # AQUFADAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YTAeFw0yMjA3MTkxNDEz
+  # MDJaFw0yNjA3MTkwMDAwMDBaMBwxGjAYBgNVBAMMEUZlZGVyaWNvIExhZ3Jhc3Rh
+  # MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDjMbaODrvLdzZbpl4zEtqUXMXl
+  # taFuA8vnquV5373I4Tc8Obx7U18WvEfknFLQoGGzKV8M9d9kDX9NfTRydJmEksLB
+  # eFuMasI+U1N71Tn4dpN0LW6PKbE35XVZtZ10LggrozqSbk9giv1bJwTTz4ZeNpJ/
+  # ytHlV6zIwcmap1Dt4QIDAQABo0YwRDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNV
+  # HQ4EFgQUEvzrfw+6jTXcizBEwSWbnNZCGu4wDgYDVR0PAQH/BAQDAgeAMA0GCSqG
+  # SIb3DQEBBQUAA4GBAJNKf/cEn54Sh9H3iAy0+X3hlfLtRu0UamTNtgmi1Ul7qEth
+  # EfOGjDtjdYj8GD97blI3z3aGWeLQkoGzELJPG2gTfsORgIN4382YwzM7AhgN++Uv
+  # 2Bmwqlzi4CtqAIg+Owi15RlOVnNSj0hw9KqEVxw4M2D9sTiKpfYCIrhhPQ8cMYIB
+  # UDCCAUwCAQEwMDAcMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0YQIQF+BNQBpc
+  # W6RBBEo1bSFRGzAJBgUrDgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKA
+  # ADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYK
+  # KwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUxWu9438wV4RNpC4M/S4clEMwyfkw
+  # DQYJKoZIhvcNAQEBBQAEgYBl0UMI4TF6i4BKvRYXjV1+7sKBsS4K8Wg9N27wnK92
+  # S5x3jM2xxAl/PI3Stdw+hEKFIqP7KgKHYTidC9EuU9RUI38rxSjkJd6hPWwZB+dm
+  # yNfLzxgGdg03dnpwcFDTdLPoNNIRbRI7zreeEdhmYZ2m3ro2MXDENqVgz24MdfR9
+  # ww==
 # SIG # End signature block
