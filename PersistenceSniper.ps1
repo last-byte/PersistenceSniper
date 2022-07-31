@@ -81,6 +81,7 @@ function Find-AllPersistence
   )
   
   $ScriptBlock = {
+    $ErrorActionPreference = 'SilentlyContinue'
     $VerbosePreference = $Using:VerbosePreference
     $hostname = ([System.Net.Dns]::GetHostByName($env:computerName)).HostName
     $psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
@@ -88,7 +89,7 @@ function Find-AllPersistence
     $systemAndUsersHives = [Collections.ArrayList]::new()
     $systemHive = (Get-Item Registry::HKEY_LOCAL_MACHINE).PSpath
     $null = $systemAndUsersHives.Add($systemHive)
-    $sids = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue
+    $sids = Get-ChildItem Registry::HKEY_USERS 
     foreach($sid in $sids)
     {
       $null = $systemAndUsersHives.Add($sid.PSpath)
@@ -146,7 +147,8 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting Run properties...'
       foreach($hive in $systemAndUsersHives)
       {
-        $runProps = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue
+        
+        $runProps = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" 
         if($runProps)
         {
           Write-Verbose -Message "[!] Found properties under $(Convert-Path -Path $hive)'s Run key which deserve investigation!"
@@ -158,7 +160,16 @@ function Find-AllPersistence
             } # skip the property if it's powershell built-in property
             $propPath = Convert-Path -Path $runProps.PSPath
             $propPath += '\' + $prop.Name
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+            $currentHive = Convert-Path -Path $hive
+            if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+            {
+              $access = 'System'
+            }
+            else
+            {
+              $access = 'User'
+            }
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -169,7 +180,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting RunOnce properties...'
       foreach($hive in $systemAndUsersHives)
       {
-        $runOnceProps = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -ErrorAction SilentlyContinue
+        $runOnceProps = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" 
         if($runOnceProps)
         {
           Write-Verbose -Message "[!] Found properties under $(Convert-Path -Path $hive)'s RunOnce key which deserve investigation!"
@@ -181,7 +192,16 @@ function Find-AllPersistence
             } # skip the property if it's powershell built-in property
             $propPath = Convert-Path -Path $runOnceProps.PSPath
             $propPath += '\' + $prop.Name
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained 'User' -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+            $currentHive = Convert-Path -Path $hive
+            if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+            {
+              $access = 'System'
+            }
+            else
+            {
+              $access = 'User'
+            }
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -197,12 +217,12 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting Image File Execution Options...'
       foreach($hive in $systemAndUsersHives)
       {
-        $ifeOpts = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options" -ErrorAction SilentlyContinue
+        $ifeOpts = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options" 
         if($ifeOpts)
         {
           foreach($key in $ifeOpts)
           {
-            $debugger = Get-ItemProperty -Path Registry::$key -Name Debugger -ErrorAction SilentlyContinue
+            $debugger = Get-ItemProperty -Path Registry::$key -Name Debugger 
             if($debugger) 
             {
               $foundDangerousIFEOpts = $true
@@ -242,12 +262,12 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting Natural Language Development Platform DLL path override properties...'
       foreach($hive in $systemAndUsersHives)
       {
-        $NLDPLanguages = Get-ChildItem -Path "$hive\SYSTEM\CurrentControlSet\Control\ContentIndex\Language" -ErrorAction SilentlyContinue
+        $NLDPLanguages = Get-ChildItem -Path "$hive\SYSTEM\CurrentControlSet\Control\ContentIndex\Language" 
         if($NLDPLanguages)
         {
           foreach($key in $NLDPLanguages)
           {
-            $DllOverridePath = Get-ItemProperty -Path Registry::$key -Name *DLLPathOverride -ErrorAction SilentlyContinue
+            $DllOverridePath = Get-ItemProperty -Path Registry::$key -Name *DLLPathOverride 
             if($DllOverridePath) 
             {
               $foundDllOverridePath = $true
@@ -269,7 +289,16 @@ function Find-AllPersistence
                 } # skip the property if it's powershell built-in property
                 $propPath = Convert-Path -Path $properties.PSPath
                 $propPath += '\' + $prop.Name
-                $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Natural Language Development Platform 6 DLL Override Path' -Classification 'Hexacorn Technique N.98' -Path $propPath -Value $properties.($prop.Name) -AccessGained 'System' -Note 'DLLs listed in properties of subkeys of (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\ContentIndex\Language are loaded via LoadLibrary executed by SearchIndexer.exe' -Reference 'https://www.hexacorn.com/blog/2018/12/30/beyond-good-ol-run-key-part-98/'
+                $currentHive = Convert-Path -Path $hive
+                if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+                {
+                  $access = 'System'
+                }
+                else
+                {
+                  $access = 'User'
+                }
+                $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Natural Language Development Platform 6 DLL Override Path' -Classification 'Hexacorn Technique N.98' -Path $propPath -Value $properties.($prop.Name) -AccessGained $access -Note 'DLLs listed in properties of subkeys of (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\ContentIndex\Language are loaded via LoadLibrary executed by SearchIndexer.exe' -Reference 'https://www.hexacorn.com/blog/2018/12/30/beyond-good-ol-run-key-part-98/'
                 $null = $persistenceObjectArray.Add($PersistenceObject)
                 $PersistenceObject
               }
@@ -285,7 +314,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting AeDebug properties...'
       foreach($hive in $systemAndUsersHives)
       {
-        $aeDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug" -Name Debugger -ErrorAction SilentlyContinue
+        $aeDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug" -Name Debugger 
         if($aeDebugger)
         {
           Write-Verbose -Message "[!] Found properties under the $(Convert-Path -Path $hive) AeDebug key which deserve investigation!"
@@ -303,7 +332,7 @@ function Find-AllPersistence
           }
         }
     
-        $aeDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug" -Name Debugger -ErrorAction SilentlyContinue
+        $aeDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug" -Name Debugger 
         if($aeDebugger)
         {
           Write-Verbose -Message "[!] Found properties under the $(Convert-Path -Path $hive) Wow6432Node AeDebug key which deserve investigation!"
@@ -329,7 +358,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting WerFault Hangs registry key Debug property...'
       foreach($hive in $systemAndUsersHives)
       {
-        $werfaultDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs" -Name Debugger -ErrorAction SilentlyContinue
+        $werfaultDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs" -Name Debugger 
         if($werfaultDebugger)
         {
           Write-Verbose -Message "[!] Found a Debugger property under the $(Convert-Path -Path $hive) WerFault Hangs key which deserve investigation!"
@@ -353,7 +382,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting WerFault Hangs registry key ReflectDebug property...'
       foreach($hive in $systemAndUsersHives)
       {
-        $werfaultReflectDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs" -Name ReflectDebugger -ErrorAction SilentlyContinue
+        $werfaultReflectDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows\Windows Error Reporting\Hangs" -Name ReflectDebugger 
         if($werfaultReflectDebugger)
         {
           Write-Verbose -Message "[!] Found a ReflectDebugger property under the $(Convert-Path -Path $hive) WerFault Hangs key which deserve investigation!"
@@ -380,19 +409,25 @@ function Find-AllPersistence
       Write-Verbose -Message "Getting Command Processor's AutoRun property..."
       foreach($hive in $systemAndUsersHives)
       {
-        $autorun = Get-ItemProperty -Path "$hive\Software\Microsoft\Command Processor" -Name AutoRun -ErrorAction SilentlyContinue
+        $autorun = Get-ItemProperty -Path "$hive\Software\Microsoft\Command Processor" -Name AutoRun 
         if($autorun)
         {
           Write-Verbose -Message "[!] $(Convert-Path -Path $hive) Command Processor's AutoRun property is set and deserves investigation!"
           foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $autorun))
           {
-            if($psProperties.Contains($prop.Name)) 
-            {
-              continue
-            } # skip the property if it's powershell built-in property
+            if($psProperties.Contains($prop.Name)) { continue } # skip the property if it's powershell built-in property
             $propPath = Convert-Path -Path $autorun.PSPath
             $propPath += '\' + $prop.Name
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Command Processor AutoRun key' -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained 'User' -Note 'The executable in the AutoRun property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
+            $currentHive = Convert-Path -Path $hive
+            if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+            {
+              $access = 'System'
+            }
+            else
+            {
+              $access = 'User'
+            }
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Command Processor AutoRun key' -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained $access -Note 'The executable in the AutoRun property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -405,7 +440,7 @@ function Find-AllPersistence
       Write-Verbose -Message "Getting Explorer's Load property..."
       foreach($hive in $systemAndUsersHives)
       {
-        $loadKey = Get-ItemProperty -Path "$hive\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name Load -ErrorAction SilentlyContinue
+        $loadKey = Get-ItemProperty -Path "$hive\Software\Microsoft\Windows NT\CurrentVersion\Windows" -Name Load 
         if($loadKey)
         {
           Write-Verbose -Message "[!] $(Convert-Path -Path $hive) Load property is set and deserves investigation!"
@@ -417,7 +452,16 @@ function Find-AllPersistence
             } # skip the property if it's powershell built-in property
             $propPath = Convert-Path -Path $loadKey.PSPath
             $propPath += '\' + $prop.Name
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Explorer Load Property' -Classification 'Uncatalogued Technique N.2' -Path $propPath -Value $loadKey.($prop.Name) -AccessGained 'User' -Note 'The executable in the Load property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time.' -Reference 'https://persistence-info.github.io/Data/windowsload.html'
+            $currentHive = Convert-Path -Path $hive
+            if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+            {
+              $access = 'System'
+            }
+            else
+            {
+              $access = 'User'
+            }
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Explorer Load Property' -Classification 'Uncatalogued Technique N.2' -Path $propPath -Value $loadKey.($prop.Name) -AccessGained $access -Note 'The executable in the Load property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Windows NT\CurrentVersion\Windows is run by explorer.exe at login time.' -Reference 'https://persistence-info.github.io/Data/windowsload.html'
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -431,7 +475,7 @@ function Find-AllPersistence
       Write-Verbose -Message "Getting Winlogon's Userinit property..."
       foreach($hive in $systemAndUsersHives)
       {
-        $userinit = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Userinit -ErrorAction SilentlyContinue
+        $userinit = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Userinit 
         if($userinit)
         {
           if($userinit.Userinit -ne 'C:\Windows\system32\userinit.exe,')
@@ -445,7 +489,7 @@ function Find-AllPersistence
               } # skip the property if it's powershell built-in property
               $propPath = Convert-Path -Path $userinit.PSPath
               $propPath += '\' + $prop.Name
-              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Winlogon Userinit Property' -Classification 'MITRE ATT&CK T1547.004' -Path $propPath -Value $userinit.($prop.Name) -AccessGained 'User' -Note "The executables in the Userinit property of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run at login time by any user. Normally this property should be set to 'C:\Windows\system32\userinit.exe,' without any further executables appended." -Reference 'https://attack.mitre.org/techniques/T1547/004/'
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Winlogon Userinit Property' -Classification 'MITRE ATT&CK T1547.004' -Path $propPath -Value $userinit.($prop.Name) -AccessGained 'System' -Note "The executables in the Userinit property of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon are run at login time by any user. Normally this property should be set to 'C:\Windows\system32\userinit.exe,' without any further executables appended." -Reference 'https://attack.mitre.org/techniques/T1547/004/'
               $null = $persistenceObjectArray.Add($PersistenceObject)
               $PersistenceObject
             }
@@ -461,7 +505,7 @@ function Find-AllPersistence
       foreach($hive in $systemAndUsersHives)
       {
 
-        $shell = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Shell -ErrorAction SilentlyContinue
+        $shell = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name Shell 
         if($shell)
         {
           if($shell.Shell -ne 'explorer.exe')
@@ -491,7 +535,7 @@ function Find-AllPersistence
       $userDirectories = Get-ChildItem -Path 'C:\Users\'
       foreach($directory in $userDirectories)
       {
-        $terminalDirectories = Get-ChildItem -Path "$($directory.FullName)\Appdata\Local\Packages\Microsoft.WindowsTerminal_*" -ErrorAction SilentlyContinue
+        $terminalDirectories = Get-ChildItem -Path "$($directory.FullName)\Appdata\Local\Packages\Microsoft.WindowsTerminal_*" 
         foreach($terminalDirectory in $terminalDirectories)
         {
           $settingsFile = Get-Content -Raw -Path "$($terminalDirectory.FullName)\LocalState\settings.json" | ConvertFrom-Json
@@ -539,16 +583,13 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting AppCertDlls properties...'
       foreach($hive in $systemAndUsersHives)
       {
-        $appCertDllsProps = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" -ErrorAction SilentlyContinue
+        $appCertDllsProps = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" 
         if($appCertDllsProps)
         {
           Write-Verbose -Message "[!] Found properties under $(Convert-Path -Path $hive) AppCertDlls key which deserve investigation!"
           foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $appCertDllsProps))
           {
-            if($psProperties.Contains($prop.Name)) 
-            {
-              continue
-            } # skip the property if it's powershell built-in property
+            if($psProperties.Contains($prop.Name)) { continue } # skip the property if it's powershell built-in property
             $propPath = Convert-Path -Path $appCertDllsProps.PSPath
             $propPath += '\' + $prop.Name
             $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppCertDlls' -Classification 'MITRE ATT&CK T1546.009' -Path $propPath -Value $appCertDllsProps.($prop.Name) -AccessGained 'System' -Note 'DLLs in properties of the key (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls are loaded by every process that loads the Win32 API at process creation.' -Reference 'https://attack.mitre.org/techniques/T1546/009/'
@@ -565,10 +606,10 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting App Paths inside the registry...'
       foreach($hive in $systemAndUsersHives)
       {
-        $appPathsKeys = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths" -ErrorAction SilentlyContinue
+        $appPathsKeys = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths" 
         foreach($key in $appPathsKeys)
         {
-          $appPath = Get-ItemProperty -Path Registry::$key -Name '(Default)' -ErrorAction SilentlyContinue
+          $appPath = Get-ItemProperty -Path Registry::$key -Name '(Default)' 
           if($appPath) 
           { 
             Write-Verbose -Message "[!] Found subkeys under the $(Convert-Path -Path $hive) App Paths key which deserve investigation!"
@@ -588,7 +629,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting Service DLLs inside the registry...'
       foreach($hive in $systemAndUsersHives)
       {
-        $keys = Get-ChildItem -Path "$hive\SYSTEM\CurrentControlSet\Services\" -ErrorAction SilentlyContinue
+        $keys = Get-ChildItem -Path "$hive\SYSTEM\CurrentControlSet\Services\" 
         foreach ($key in $keys)
         {
           $ImagePath = (Get-ItemProperty -Path ($key.pspath)).ImagePath
@@ -606,7 +647,7 @@ function Find-AllPersistence
               }
               if ($null -ne $ServiceDll)
               {
-                if ((Get-AuthenticodeSignature -FilePath $ServiceDll -ErrorAction SilentlyContinue).IsOSBinary) 
+                if ((Get-AuthenticodeSignature -FilePath $ServiceDll ).IsOSBinary) 
                 {
                   continue
                 }
@@ -631,7 +672,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting Group Policy Extension DLLs inside the registry...'
       foreach($hive in $systemAndUsersHives)
       {
-        $keys = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GPExtensions" -ErrorAction SilentlyContinue
+        $keys = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GPExtensions" 
         foreach ($key in $keys)
         {
           $DllName = (Get-ItemProperty -Path ($key.pspath)).DllName
@@ -641,7 +682,7 @@ function Find-AllPersistence
             {
               $DllName = "C:\Windows\System32\$DllName"
             }
-            if ((Get-AuthenticodeSignature -FilePath $DllName -ErrorAction SilentlyContinue).IsOSBinary) 
+            if ((Get-AuthenticodeSignature -FilePath $DllName ).IsOSBinary) 
             {
               continue
             }
@@ -664,7 +705,7 @@ function Find-AllPersistence
       Write-Verbose -Message 'Getting Winlogon MPNotify property...'
       foreach($hive in $systemAndUsersHives)
       {
-        $mpnotify = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name mpnotify -ErrorAction SilentlyContinue
+        $mpnotify = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name mpnotify 
         if($mpnotify)
         {
           Write-Verbose -Message "[!] Found MPnotify property under $(Convert-Path -Path $hive) Winlogon key!"
