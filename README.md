@@ -85,5 +85,7 @@ The techniques implemented in this script have already been published by skilled
 - [Grzegorz Tworek](https://persistence-info.github.io/);
 - All the other researchers who disclosed cool and unknown persistence techniques.
 
+I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/), in particular [Riccardo Ancarani](https://twitter.com/dottor_morte), for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell tool.
+
 ## License
 This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license.
