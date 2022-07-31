@@ -63,19 +63,21 @@ function Find-AllPersistence
   
   
   Param(
-    [Parameter(Position = 0)]
-    [String]
-    $DiffCSV = $null, 
-    
+    [CmdletBinding()]
+        
     [Parameter(Position = 0)]
     [String[]]
     $ComputerName = $null,
     
     [Parameter(Position = 1)]
+    [String]
+    $DiffCSV = $null, 
+    
+    [Parameter(Position = 2)]
     [Switch]
     $IncludeHighFalsePositivesChecks,
         
-    [Parameter(Position = 2)]
+    [Parameter(Position = 3)]
     [String]
     $OutputCSV = $null  
   )
