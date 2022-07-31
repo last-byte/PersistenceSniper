@@ -13,6 +13,7 @@ PS C:\> Find-AllPersistence
 Persistence Sniper's `Find-AllPersistence` returns an array of objects of type PSCustomObject with the following properties:
 ```
 $PersistenceObject = [PSCustomObject]@{
+      "ComputerName" = $ComputerName
       "Technique" = $Technique
       "Classification" = $Classification
       "Path" = $Path
@@ -33,6 +34,7 @@ PS C:\> Find-AllPersistence | Where-Object "Access Gained" -EQ "System"
 
 ## Interpreting results
 As already introduced, `Find-AllPersistence` outputs an array of Powershell Custom Objects. Each object has the following properties, which can be used to filter, sort and better understand the different techniques the function looks for:
+- ComputerName: this is fairly straightforward. If you run `Find-AllPersistence` without a `-ComputerName` parameter, PersistenceSniper will run only on the local machine. Otherwise it will run on the remote computer(s) you specify;
 - Technique: this is the name of the technique itself, as it's commonly known in the community;
 - Classification: this property can be used to quickly identify techniques based on their MITRE ATT&CK technique and subtechnique number. For those techniques which don't have a MITRE ATT&CK classification, other classifications are used, the most common being [Hexacorn's one](https://www.hexacorn.com/blog/2017/01/28/beyond-good-ol-run-key-all-parts/) since a lot of techniques were discovered by him. When a technique's source cannot be reliably identified, the "Uncatalogued Technique N.#" classification is used; 
 - Path: this is the path, on the filesystem or in the registry, at which the technique has been implanted;
@@ -59,21 +61,21 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 
 ## Persistence techniques implemented so far
 There are literally hundreds of already public persistence techniques, with more coming out by the week. This is a list of the ones implemented so far:
-- [x] [HKEY_USERS and HKLM Run Key](https://attack.mitre.org/techniques/T1547/001/)
-- [x] [HKEY_USERS and HKLM RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
+- [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
+- [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
 - [x] [Natural Language Development Platform 6 DLL Override Path](https://www.hexacorn.com/blog/2018/12/30/beyond-good-ol-run-key-part-98/)
 - [x] [AEDebug Keys](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/)
 - [x] [Windows Error Reporting Debugger](https://www.hexacorn.com/blog/2019/09/20/beyond-good-ol-run-key-part-116/)
 - [x] [Windows Error Reporting ReflectDebugger](https://www.hexacorn.com/blog/2018/08/31/beyond-good-ol-run-key-part-85/)
-- [x] [HKEY_USERS and HKLM cmd.exe AutoRun](https://persistence-info.github.io/Data/cmdautorun.html)
-- [x] [HKEY_USERS Explorer Load](https://persistence-info.github.io/Data/windowsload.html)
+- [x] [Command Prompt AutoRun](https://persistence-info.github.io/Data/cmdautorun.html)
+- [x] [Explorer Load](https://persistence-info.github.io/Data/windowsload.html)
 - [x] [Winlogon Userinit](https://attack.mitre.org/techniques/T1547/004/)
 - [x] [Winlogon Shell](https://attack.mitre.org/techniques/T1547/004/)
 - [x] [Windows Terminal startOnUserLogin](https://twitter.com/nas_bench/status/1550836225652686848)
 - [x] [AppCertDlls DLL Injection](https://attack.mitre.org/techniques/T1546/009/)
 - [x] [App Paths Hijacking](https://www.hexacorn.com/blog/2013/01/19/beyond-good-ol-run-key-part-3/)
-- [x] [Services' ServiceDll Hijacking](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/)
+- [x] [ServiceDll Hijacking](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/)
 - [x] [Group Policy Extensions DLLs](https://persistence-info.github.io/Data/gpoextension.html)
 - [x] [Winlogon MPNotify](https://persistence-info.github.io/Data/mpnotify.html)
 

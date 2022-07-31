@@ -16,21 +16,21 @@ function Find-AllPersistence
 
       Enumerate all the persistence methods found on a machine and print them for the user to see.
 
+      .PARAMETER ComputerName
+
+      Optional, an array of computernames to run the script on.
+
       .PARAMETER DiffCSV
 
       String: Take a CSV as input and exclude from the output all the local persistences which match the ones in the input CSV. 
 
-      .PARAMETER ComputerName
+      .PARAMETER IncludeHighFalsePositivesChecks
 
-      Optional, an array of computernames to run the script on.
+      Switch: Forces Persistence Sniper to also call a number of functions with checks which are more difficult to filter and in turn can cause a lot of false positives.
 	    
       .PARAMETER OutputCSV
 
       String: Output to a CSV file for later consumption.
-
-      .PARAMETER IncludeHighFalsePositivesChecks
-
-      Switch: Forces Persistence Sniper to also call a number of functions with checks which are more difficult to filter and in turn can cause a lot of false positives.
 
       .EXAMPLE
 
@@ -49,8 +49,18 @@ function Find-AllPersistence
 
       .EXAMPLE
 
-      Enumerate all persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV and output the findings on a CSV.
-      Find-AllPersistence -DiffCSV .\persistences.csv -OutputCSV .\findings.csv -IncludeHighFalsePositivesChecks
+      Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV and output the results on another CSV.
+      Find-AllPersistence -DiffCSV .\persistences.csv
+
+      .EXAMPLE
+
+      Enumerate all persistence techniques implanted on an array of remote machines but show only the persistences which are not in an input CSV and output the findings on a CSV.
+      Find-AllPersistence -ComputerName @('dc1.macrohard.lol', 'dc2.macrohard.lol') -IncludeHighFalsePositivesChecks -DiffCSV .\persistences.csv -OutputCSV .\findings.csv
+
+      .EXAMPLE
+
+      Enumerate all persistence techniques implanted on an array of remote machines retrieved from a file containing one hostname per line but show only the persistences which are not in an input CSV and output the findings on a CSV.
+      Find-AllPersistence -ComputerName (Get-Content computers.txt) -IncludeHighFalsePositivesChecks -DiffCSV .\persistences.csv -OutputCSV .\findings.csv 
 
       .NOTES
 
