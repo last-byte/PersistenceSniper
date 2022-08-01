@@ -32,6 +32,10 @@ PS C:\> Find-AllPersistence | Where-Object "Access Gained" -EQ "System"
 
 ![](resources/findallpersistenceexample01.png)
 
+Of course, being PersistenceSniper a Powershell-based tool, some cool tricks can be performed, like passing its output to `Out-GridView` in order to have a GUI-based table to interact with.
+
+![](resources/findallpersistenceexample03.png)
+
 ## Interpreting results
 As already introduced, `Find-AllPersistence` outputs an array of Powershell Custom Objects. Each object has the following properties, which can be used to filter, sort and better understand the different techniques the function looks for:
 - ComputerName: this is fairly straightforward. If you run `Find-AllPersistence` without a `-ComputerName` parameter, PersistenceSniper will run only on the local machine. Otherwise it will run on the remote computer(s) you specify;
@@ -42,10 +46,6 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 - Access Gained: this is the kind of access the technique grants the attacker. If it's a Run key under HKCU for example, the access gained will be at a user level, while if it's under HKLM it will be at system level;
 - Note: this is a quick explanation of the technique, so that its workings can be easily grasped;
 - Reference: this is a link to a more in-depth explanation of the technique, should the analyst need to study it more.
-
-Of course, being PersistenceSniper a Powershell-based tool, some cool tricks can be performed, like passing its output to `Out-GridView` in order to have a GUI-based table to interact with.
-
-![](resources/findallpersistenceexample03.png)
 
 
 ## Dealing with false positives
