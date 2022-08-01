@@ -862,6 +862,36 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+    
+    function Get-LsaExtensions
+    {
+      Write-Verbose -Message "Getting LSA's extensions..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $lsaExtensions = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\LsaExtensionConfig\LsaSrv" -Name Extensions 
+        if($lsaExtensions)
+        {
+          $dlls = $lsaExtensions.Extensions -split '\s+'
+          foreach ($dll in $dlls)
+          {
+            $dllPath = $dll
+            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            {
+              $dllPath = "C:\Windows\System32\$dllPath"
+            }
+            if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+            {
+              Write-Verbose -Message "[!] Found LSA Extension DLL under the $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Control\LsaExtensionConfig\LsaSrv\Extensions property which points to a non-OS DLL!"
+              $propPath = (Convert-Path -Path $lsaExtensions.PSPath) + '\Extensions'
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'LSA Extensions DLL' -Classification 'Uncatalogued Technique N.6' -Path $propPath -Value $dll -AccessGained 'System' -Note 'The DLLs specified in the "Extensions" property of the (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\LsaExtensionConfig\LsaSrv\ key are loaded by LSASS at machine boot.' -Reference 'https://persistence-info.github.io/Data/lsaaextension.html'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+              $PersistenceObject
+            }
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
   
     Write-Verbose -Message 'Starting execution...'
 
@@ -884,6 +914,7 @@ function Find-AllPersistence
     Get-StartupPrograms
     Get-UserInitMprScript
     Get-AutodialDLL
+    Get-LsaExtensions
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {
