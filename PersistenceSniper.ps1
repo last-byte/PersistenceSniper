@@ -614,7 +614,14 @@ function Find-AllPersistence
         foreach($key in $appPathsKeys)
         {
           $appPath = Get-ItemProperty -Path Registry::$key -Name '(Default)' 
-          if($appPath) 
+          
+          
+          $exePath = $appPath.'(Default)'
+          if((Test-Path -Path $exePath -PathType leaf) -eq $false)
+          {
+            $exePath = "C:\Windows\System32\$exePath"
+          }
+          if ($exePath.Contains('powershell') -or $exePath.Contains('cmd') -or -not (Get-AuthenticodeSignature -FilePath $exePath ).IsOSBinary)
           { 
             Write-Verbose -Message "[!] Found subkeys under the $(Convert-Path -Path $hive) App Paths key which deserve investigation!"
             $propPath = Convert-Path -Path $key.PSPath
@@ -893,6 +900,122 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
   
+    function Get-ServerLevelPluginDll
+    {
+      Write-Verbose -Message "Getting the ServerLevelPluginDll property..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $pluginDll = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Services\DNS\Parameters" -Name ServerLevelPluginDll 
+        if($pluginDll)
+        {
+          $dllPath = $pluginDll.ServerLevelPluginDll
+          if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+          {
+            $dllPath = "C:\Windows\System32\$dllPath"
+          }
+          if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+          {
+            Write-Verbose -Message "[!] Found ServerLevelPluginDll property under $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Services\DNS\Parameters key which points to a non-OS DLL!"
+            $propPath = (Convert-Path -Path $pluginDll.PSPath) + '\ServerLevelPluginDll'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'ServerLevelPluginDll DNS Server DLL Hijacking' -Classification 'Uncatalogued Technique N.7' -Path $propPath -Value $pluginDll.ServerLevelPluginDll -AccessGained 'System' -Note 'The DLL specified in the "ServerLevelPluginDll" property of the (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Services\DNS\Parameters key is loaded by the DNS service on systems with the "DNS Server" role enabled.' -Reference 'https://persistence-info.github.io/Data/serverlevelplugindll.html'
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+            $PersistenceObject
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-LsaPasswordFilter
+    {
+      Write-Verbose -Message "Getting LSA's password filters..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $passwordFilters = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\Lsa" -Name 'Notification Packages' 
+        if($passwordFilters)
+        {
+          $dlls = $passwordFilters.'Notification Packages' -split '\s+'
+          foreach ($dll in $dlls)
+          {
+            $dllPath = $dll
+            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            {
+              $dllPath = "C:\Windows\System32\$dllPath.dll"
+            }
+            if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+            {
+              Write-Verbose -Message "[!] Found a LSA password filter DLL under the $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Control\Lsa\Notification Packages property which points to a non-OS DLL!"
+              $propPath = (Convert-Path -Path $passwordFilters.PSPath) + '\Notification Packages'
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'LSA Password Filter DLL' -Classification 'MITRE ATT&CK T1556.002' -Path $propPath -Value $dll -AccessGained 'System' -Note 'The DLLs specified in the "Notification Packages" property of the (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\Lsa\ key are loaded by LSASS at machine boot.' -Reference 'https://attack.mitre.org/techniques/T1556/002/'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+              $PersistenceObject
+            }
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-LsaAuthenticationPackages
+    {
+      Write-Verbose -Message "Getting LSA's authentication packages..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $authPackages = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\Lsa" -Name 'Authentication Packages' 
+        if($authPackages)
+        {
+          $dlls = $authPackages.'Authentication Packages' -split '\s+'
+          foreach ($dll in $dlls)
+          {
+            $dllPath = $dll
+            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            {
+              $dllPath = "C:\Windows\System32\$dllPath.dll"
+            }
+            if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+            {
+              Write-Verbose -Message "[!] Found a LSA authentication package DLL under the $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Control\Lsa\Authentication Packages property which points to a non-OS DLL!"
+              $propPath = (Convert-Path -Path $authPackages.PSPath) + '\Authentication Packages'
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'LSA Authentication Package DLL' -Classification 'MITRE ATT&CK T1547.002' -Path $propPath -Value $dll -AccessGained 'System' -Note 'The DLLs specified in the "Authentication Packages" property of the (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\Lsa\ key are loaded by LSASS at machine boot.' -Reference 'https://attack.mitre.org/techniques/T1547/002/'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+              $PersistenceObject
+            }
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-LsaSecurityPackages
+    {
+      Write-Verbose -Message "Getting LSA's security packages..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $secPackages = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\Lsa" -Name 'Security Packages' 
+        if($secPackages)
+        {
+          $dlls = $secPackages.'Security Packages' -split '\s+'
+          foreach ($dll in $dlls)
+          {
+            $dllPath = $dll -replace '"','' # security packages are often delimited by double quotes so we want to get rid of them
+            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            {
+              $dllPath = "C:\Windows\System32\$dllPath.dll"
+            }
+            if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+            {
+              Write-Verbose -Message "[!] Found a LSA security package DLL under the $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Control\Lsa\Security Packages property which points to a non-OS DLL!"
+              $propPath = (Convert-Path -Path $secPackages.PSPath) + '\Security Packages'
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'LSA Security Package DLL' -Classification 'MITRE ATT&CK T1547.005' -Path $propPath -Value $dll -AccessGained 'System' -Note 'The DLLs specified in the "Security Packages" property of the (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Control\Lsa\ key are loaded by LSASS at machine boot.' -Reference 'https://attack.mitre.org/techniques/T1547/005/'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+              $PersistenceObject
+            }
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
+  
     Write-Verbose -Message 'Starting execution...'
 
     Get-RunAndRunOnce
@@ -915,6 +1038,10 @@ function Find-AllPersistence
     Get-UserInitMprScript
     Get-AutodialDLL
     Get-LsaExtensions
+    Get-ServerLevelPluginDll
+    Get-LsaPasswordFilter
+    Get-LsaAuthenticationPackages
+    Get-LsaSecurityPackages
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {

@@ -83,7 +83,10 @@ There are literally hundreds of already public persistence techniques, with more
 - [x] [Startup Folder](https://attack.mitre.org/techniques/T1547/001/)  
 - [x] [User Init Mpr Logon Script](https://attack.mitre.org/techniques/T1037/001/)  
 - [x] [AutodialDLL Winsock Injection](https://www.hexacorn.com/blog/2015/01/13/beyond-good-ol-run-key-part-24/)  
-- [x] [LSA Extensions DLL](https://persistence-info.github.io/Data/lsaaextension.html)
+- [x] [LSA Extensions DLL](https://persistence-info.github.io/Data/lsaaextension.html)  
+- [x] [ServerLevelPluginDll DNS Server DLL Hijacking](https://persistence-info.github.io/Data/serverlevelplugindll.html)  
+- [x] [LSA Authentication Packages DLL](https://attack.mitre.org/techniques/T1547/002/)    
+- [x] [LSA Security Packages DLL](https://attack.mitre.org/techniques/T1547/005/)  
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
