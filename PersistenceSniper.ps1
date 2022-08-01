@@ -790,6 +790,78 @@ function Find-AllPersistence
       }  
       Write-Verbose -Message ''
     }
+    
+    function Get-StartupPrograms
+    {
+      Write-Verbose -Message "Checking if users' Startup folder contains interesting artifacts..."
+      $userDirectories = Get-ChildItem -Path 'C:\Users\'
+      foreach($directory in $userDirectories)
+      {
+        $startupDirectory = Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" 
+        foreach($file in $startupDirectory)
+        {          
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Startup Folder' -Classification 'MITRE ATT&CK T1547.001' -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Value "$file" -AccessGained 'User' -Note "The executables under the \AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ of a user's folder are run every time that user logs in." -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+          $found = $true
+          break
+        }
+      } 
+      Write-Verbose -Message ''
+    }
+    
+    function Get-UserInitMprScript
+    {
+      Write-Verbose -Message "Getting users' UserInitMprLogonScript property..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $mprlogonscript = Get-ItemProperty -Path "$hive\Environment" -Name UserInitMprLogonScript 
+        if($mprlogonscript)
+        {
+          Write-Verbose -Message "[!] Found UserInitMprLogonScript property under $(Convert-Path -Path $hive)\Environment\ key!"
+          $propPath = (Convert-Path -Path $mprlogonscript.PSPath) + '\UserInitMprLogonScript'
+          $currentHive = Convert-Path -Path $hive
+          if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+          {
+            $access = 'System'
+          }
+          else
+          {
+            $access = 'User'
+          }
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'User Init Mpr Logon Script' -Classification 'MITRE ATT&CK T1037.001' -Path $propPath -Value $mprlogonscript.UserInitMprLogonScript -AccessGained $access -Note 'The executable specified in the "UserInitMprLogonScript" property of the HKEY_USERS\<SID>\Environment key is run when the user logs on.' -Reference 'https://attack.mitre.org/techniques/T1037/001/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-AutodialDLL
+    {
+      Write-Verbose -Message "Getting the AutodialDLL property..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $autodialDll = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Services\WinSock2\Parameters" -Name AutodialDLL 
+        if($autodialDll)
+        {
+          $dllPath = $autodialDll.AutodialDLL
+          if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+          {
+            $dllPath = "C:\Windows\System32\$dllPath"
+          }
+          if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+          {
+            Write-Verbose -Message "[!] Found AutodialDLL property under $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Services\WinSock2\Parameters\ key which points to a non-OS DLL!"
+            $propPath = (Convert-Path -Path $autodialDll.PSPath) + '\AutodialDLL'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AutodialDLL Winsock Injection' -Classification 'Hexacorn Technique N.24' -Path $propPath -Value $autodialDll.AutodialDLL -AccessGained 'System' -Note 'The DLL specified in the "AutodialDLL" property of the (HKLM|HKEY_USERS\<SID>)\SYSTEM\CurrentControlSet\Services\WinSock2\Parameters key is loaded by the Winsock library everytime it connects to the internet.' -Reference 'https://www.hexacorn.com/blog/2015/01/13/beyond-good-ol-run-key-part-24/'
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+            $PersistenceObject
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
   
     Write-Verbose -Message 'Starting execution...'
 
@@ -809,6 +881,9 @@ function Find-AllPersistence
     Get-WinlogonMPNotify
     Get-CHMHelperDll
     Get-HHCtrlHijacking
+    Get-StartupPrograms
+    Get-UserInitMprScript
+    Get-AutodialDLL
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {

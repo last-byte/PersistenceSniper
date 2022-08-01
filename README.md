@@ -79,7 +79,10 @@ There are literally hundreds of already public persistence techniques, with more
 - [x] [Group Policy Extensions DLLs](https://persistence-info.github.io/Data/gpoextension.html)
 - [x] [Winlogon MPNotify](https://persistence-info.github.io/Data/mpnotify.html)
 - [x] [CHM Helper DLL](https://www.hexacorn.com/blog/2018/04/22/beyond-good-ol-run-key-part-76/)
-- [x] [Hijacking of hhctrl.ocx](https://www.hexacorn.com/blog/2018/04/23/beyond-good-ol-run-key-part-77/)
+- [x] [Hijacking of hhctrl.ocx](https://www.hexacorn.com/blog/2018/04/23/beyond-good-ol-run-key-part-77/)  
+- [x] [Startup Folder](https://attack.mitre.org/techniques/T1547/001/)  
+- [x] [User Init Mpr Logon Script](https://attack.mitre.org/techniques/T1037/001/)  
+- [x] [AutodialDLL Winsock Injection](https://www.hexacorn.com/blog/2015/01/13/beyond-good-ol-run-key-part-24/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
