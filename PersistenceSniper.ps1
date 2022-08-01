@@ -109,35 +109,27 @@ function Find-AllPersistence
     function New-PersistenceObject
     {
       param(
-        [Parameter(Mandatory)]
         [String]
         $Hostname,
-      
-        [Parameter(Mandatory)]
+
         [String]
         $Technique, 
-      
-        [Parameter(Mandatory)]
+
         [String]
         $Classification, 
-      
-        [Parameter(Mandatory)]
+
         [String]
         $Path, 
-      
-        [Parameter(Mandatory)]
+
         [String]
         $Value, 
-      
-        [Parameter(Mandatory)]
+
         [String]
         $AccessGained,
       
-        [Parameter(Mandatory)]
         [String]
         $Note,
       
-        [Parameter(Mandatory)]
         [String]
         $Reference
       )
@@ -729,6 +721,75 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+    
+    function Get-CHMHelperDll
+    {
+      Write-Verbose -Message 'Getting CHM Helper DLL inside the registry...'
+      foreach($hive in $systemAndUsersHives)
+      {
+        $dllLocation = Get-ItemProperty -Path "$hive\Software\Microsoft\HtmlHelp Author" -Name Location
+        if($dllLocation)
+        {
+          $dllPath = $dllLocation.Location
+          if ($null -ne $dllPath)
+          {
+            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            {
+              $dllPath = "C:\Windows\System32\$dllPath"
+            }
+            if ((Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary) 
+            {
+              continue
+            }
+            else
+            {
+              Write-Verbose -Message "[!] Found Location property under $(Convert-Path -Path $hive)\Software\Microsoft\HtmlHelp Author\ which deserve investigation!"
+              $propPath = (Convert-Path -Path "$($dllLocation.pspath)") + '\Location'
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'CHM Helper DLL' -Classification 'Hexacorn Technique N.76' -Path $propPath -Value "$($dllLocation.Location)" -AccessGained 'User' -Note 'DLLs in the Location property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\HtmlHelp Author\ are loaded when a CHM help file is parsed. If an attacker adds said entry, the malicious DLL will be loaded.' -Reference 'https://www.hexacorn.com/blog/2018/04/22/beyond-good-ol-run-key-part-76/'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+              $PersistenceObject
+            }
+          }
+        }  
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-HHCtrlHijacking
+    {
+      Write-Verbose -Message 'Getting the hhctrl.ocx library inside the registry...'
+      $hive = (Get-Item Registry::HKEY_CLASSES_ROOT).PSpath
+      $dllLocation = Get-ItemProperty -Path "$hive\CLSID\{52A2AAAE-085D-4187-97EA-8C30DB990436}\InprocServer32" -Name '(Default)'
+      $dllPath = $dllLocation.'(Default)'
+      if ($null -ne $dllPath)
+      {
+        if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+        {
+          $dllPath = "C:\Windows\System32\$dllPath"
+        }
+        if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+        {
+          Write-Verbose -Message "[!] The DLL at $(Convert-Path -Path $hive)\CLSID\{52A2AAAE-085D-4187-97EA-8C30DB990436}\InprocServer32\(Default) is not an OS binary and deserves investigation!"
+          $propPath = (Convert-Path -Path "$($dllLocation.pspath)") + '\(Default)'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Hijacking of hhctrl.ocx' -Classification 'Hexacorn Technique N.77' -Path $propPath -Value "$($dllLocation.'(Default)')" -AccessGained 'User' -Note 'The DLL in the (Default) property of HKEY_CLASSES_ROOT\CLSID\{52A2AAAE-085D-4187-97EA-8C30DB990436}\InprocServer32 is loaded when a CHM help file is parsed or when hh.exe is started. If an attacker modifies said entry, the malicious DLL will be loaded. In case the loading fails for any reason, C:\Windows\hhctrl.ocx is loaded.' -Reference 'https://www.hexacorn.com/blog/2018/04/23/beyond-good-ol-run-key-part-77/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }
+      else
+      {
+        $dllPath = "C:\Windows\System32\hhctrl.ocx"
+        if ((Test-Path -Path $dllPath -PathType Leaf) -and -not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+        {
+          Write-Verbose -Message "[!] The DLL at $dllPath is not an OS binary and deserves investigation!"
+          $propPath = (Convert-Path -Path "$($dllLocation.pspath)") + '\(Default)'
+          $PersistenceObject = New-PersistenceObject -Hostname "$hostname" -Technique 'Hijacking of hhctrl.ocx' -Classification 'Hexacorn Technique N.77' -Path "$dllPath" -Value "Not an OS binary" -AccessGained 'User' -Note 'The DLL in the (Default) property of HKEY_CLASSES_ROOT\CLSID\{52A2AAAE-085D-4187-97EA-8C30DB990436}\InprocServer32 is loaded when a CHM help file is parsed or when hh.exe is started. If an attacker modifies said entry, the malicious DLL will be loaded. In case the loading fails for any reason, C:\Windows\hhctrl.ocx is loaded.' -Reference 'https://www.hexacorn.com/blog/2018/04/23/beyond-good-ol-run-key-part-77/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }  
+      Write-Verbose -Message ''
+    }
   
     Write-Verbose -Message 'Starting execution...'
 
@@ -746,6 +807,8 @@ function Find-AllPersistence
     Get-ServiceDlls
     Get-GPExtensionDlls
     Get-WinlogonMPNotify
+    Get-CHMHelperDll
+    Get-HHCtrlHijacking
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {
