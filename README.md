@@ -43,7 +43,7 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 - Note: this is a quick explanation of the technique, so that its workings can be easily grasped;
 - Reference: this is a link to a more in-depth explanation of the technique, should the analyst need to study it more.
 
-Of course, being it Powershell-based tool, some cool tricks can be performed, like passing its output to `Out-GridView` in order to have a GUI-based table to interact with.
+Of course, being PersistenceSniper a Powershell-based tool, some cool tricks can be performed, like passing its output to `Out-GridView` in order to have a GUI-based table to interact with.
 
 ![](resources/findallpersistenceexample03.png)
 
