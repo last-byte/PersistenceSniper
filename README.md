@@ -96,7 +96,7 @@ There are literally hundreds of already public persistence techniques, with more
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
 - [Hexacorn](https://www.hexacorn.com/) and his never-ending [Beyond good ol' Run key series](https://www.hexacorn.com/blog/2017/01/28/beyond-good-ol-run-key-all-parts/);
-- [Grzegorz Tworek](https://twitter.com/0gtweet/) and his amazing [https://persistence-info.github.io/](https://persistence-info.github.io/);
+- [Grzegorz Tworek](https://twitter.com/0gtweet/) and his amazing [persistence-info.github.io website](https://persistence-info.github.io/);
 - All the other researchers who disclosed cool and unknown persistence techniques.
 
 I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/), in particular [Riccardo Ancarani](https://twitter.com/dottor_morte), for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell tool.
