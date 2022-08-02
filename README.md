@@ -67,7 +67,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 
 ![](resources/findallpersistenceexample02.png)
 
-## Look for persistences by taking incremental snapshots
+## Looking for persistences by taking incremental snapshots
 One cool way to use Persistence Sniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
 
 ## Persistence techniques implemented so far
