@@ -1015,6 +1015,33 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+    
+    function Get-WinlogonNotificationPackages
+    {
+      Write-Verbose -Message 'Getting Winlogon Notification packages...'
+      foreach($hive in $systemAndUsersHives)
+      {
+        
+        $notificationPackages = Get-ItemProperty -Path "$hive\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify" 
+        if($notificationPackages)
+        {
+          Write-Verbose -Message "[!] Found properties under $(Convert-Path -Path $hive)\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify key which deserve investigation!"
+          foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $notificationPackages))
+          {
+            if($psProperties.Contains($prop.Name)) 
+            {
+              continue
+            } # skip the property if it's powershell built-in property
+            $propPath = Convert-Path -Path $notificationPackages.PSPath
+            $propPath += '\' + $prop.Name
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Winlogon Notification Package' -Classification 'MITRE ATT&CK T1547.004' -Path $propPath -Value $notificationPackages.($prop.Name) -AccessGained 'System' -Note 'DLLs in the properties of the (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify key are loaded by the system when it boots.' -Reference 'https://attack.mitre.org/techniques/T1547/004/'
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+            $PersistenceObject
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
   
     Write-Verbose -Message 'Starting execution...'
 
@@ -1042,6 +1069,7 @@ function Find-AllPersistence
     Get-LsaPasswordFilter
     Get-LsaAuthenticationPackages
     Get-LsaSecurityPackages
+    Get-WinlogonNotificationPackages
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {

@@ -65,7 +65,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 ![](resources/findallpersistenceexample02.png)
 
 ## Persistence techniques implemented so far
-There are literally hundreds of already public persistence techniques, with more coming out by the week. So far the following 26 techniques have been implemented:
+There are literally hundreds of already public persistence techniques, with more coming out by the week. So far the following 27 techniques have been implemented:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
@@ -92,6 +92,7 @@ There are literally hundreds of already public persistence techniques, with more
 - [x] [ServerLevelPluginDll DNS Server DLL Hijacking](https://persistence-info.github.io/Data/serverlevelplugindll.html)  
 - [x] [LSA Authentication Packages DLL](https://attack.mitre.org/techniques/T1547/002/)    
 - [x] [LSA Security Packages DLL](https://attack.mitre.org/techniques/T1547/005/)  
+- [x] [Winlogon Notify Packages DLL](https://attack.mitre.org/techniques/T1547/004/) 
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
