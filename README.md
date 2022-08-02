@@ -65,7 +65,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 ![](resources/findallpersistenceexample02.png)
 
 ## Persistence techniques implemented so far
-There are literally hundreds of already public persistence techniques, with more coming out by the week. This is a list of the ones implemented so far:
+There are literally hundreds of already public persistence techniques, with more coming out by the week. So far the following 26 techniques have been implemented:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
