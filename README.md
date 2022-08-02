@@ -102,4 +102,4 @@ The techniques implemented in this script have already been published by skilled
 I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/), in particular [Riccardo Ancarani](https://twitter.com/dottor_morte), for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell tool.
 
 ## License
-This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license.
+This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license. TL;DR: you can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission.
