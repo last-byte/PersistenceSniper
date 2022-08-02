@@ -2,6 +2,9 @@
 # Persistence Sniper
 Persistence Sniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines.
 
+## The Why
+Why writing such a tool, you might ask. Well, for starters, I tried looking around and I did not find a tool which suited my particular use case, which was looking for known persistence techniques, automatically, across multiple machines, while also being able to quickly and easily parse and compare results. Sure, [Sysinternals' Autoruns](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) is an amazing tool and it's definitely worth using, but, given it output results in non-standard formats and can't be run remotely unless you do some shenanigans with its command line equivalent, I did not find it a good fit for me. Plus, some of the techniques I implemented so far in PersistenceSniper have not been implemented into Autoruns yet as far as I know. Anyway, if what you need is an easy to use, GUI based tool with lots of already implemented features, Autoruns is the way to go, otherwise let PersistenceSniper have a shot, it won't miss it :)
+
 ## Usage
 Using Persistence Sniper is as simple as:
 ```
@@ -64,8 +67,11 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 
 ![](resources/findallpersistenceexample02.png)
 
+## Look for persistences by taking incremental snapshots
+One cool way to use Persistence Sniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
+
 ## Persistence techniques implemented so far
-There are literally hundreds of already public persistence techniques, with more coming out by the week. So far the following 27 techniques have been implemented:
+The topic of persistence, especially on Windows machines, is one of those who see new discoveries basically everyday. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following 27 techniques have been implemented successfully:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
