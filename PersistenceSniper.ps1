@@ -13,61 +13,56 @@ function Find-AllPersistence
       Optional Dependencies: None
 
       .DESCRIPTION
-
       Enumerate all the persistence methods found on a machine and print them for the user to see.
 
       .PARAMETER ComputerName
-
       Optional, an array of computernames to run the script on.
 
       .PARAMETER DiffCSV
-
-      String: Take a CSV as input and exclude from the output all the local persistences which match the ones in the input CSV. 
+      Optional, a CSV file to be taken as input and used to exclude from the output all the local persistences which match the ones in the CSV file itself. 
 
       .PARAMETER IncludeHighFalsePositivesChecks
-
-      Switch: Forces PersistenceSniper to also call a number of functions with checks which are more difficult to filter and in turn can cause a lot of false positives.
+      Optional, a switch which forces PersistenceSniper to also call a number of functions with checks which are more difficult to filter and in turn cause a lot of false positives.
 	    
       .PARAMETER OutputCSV
-
-      String: Output to a CSV file for later consumption.
+      Optional, a CSV file to be used as output which will contain all the findings in a CSV format. 
 
       .EXAMPLE
-
-      Enumerate low false positive persistence techniques implanted on the local machine.
       Find-AllPersistence
+      Enumerate low false positive persistence techniques implanted on the local machine.
 
       .EXAMPLE
+      $Persistences = Find-AllPersistence
+      Enumerate low false positive persistence techniques implanted on the local machine and save them in Powershell variable for later processing.
 
-      Enumerate low false positive persistence techniques implanted on the local machine and output to a CSV.
+      .EXAMPLE
       Find-AllPersistence -OutputCSV .\persistences.csv
+      Enumerate low false positive persistence techniques implanted on the local machine and output to a CSV.
 
       .EXAMPLE
-
+      Find-AllPersistence -DiffCSV .\persistences.csv
       Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV.
-      Find-AllPersistence -DiffCSV .\persistences.csv
 
       .EXAMPLE
-
+      Find-AllPersistence -DiffCSV .\persistences.csv
       Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV and output the results on another CSV.
-      Find-AllPersistence -DiffCSV .\persistences.csv
 
       .EXAMPLE
-
-      Enumerate all persistence techniques implanted on an array of remote machines but show only the persistences which are not in an input CSV and output the findings on a CSV.
       Find-AllPersistence -ComputerName @('dc1.macrohard.lol', 'dc2.macrohard.lol') -IncludeHighFalsePositivesChecks -DiffCSV .\persistences.csv -OutputCSV .\findings.csv
+      Enumerate all persistence techniques implanted on an array of remote machines but show only the persistences which are not in an input CSV and output the findings on a CSV.
 
       .EXAMPLE
-
+      Find-AllPersistence -ComputerName (Get-Content computers.txt) -IncludeHighFalsePositivesChecks -DiffCSV .\persistences.csv -OutputCSV .\findings.csv
       Enumerate all persistence techniques implanted on an array of remote machines retrieved from a file containing one hostname per line but show only the persistences which are not in an input CSV and output the findings on a CSV.
-      Find-AllPersistence -ComputerName (Get-Content computers.txt) -IncludeHighFalsePositivesChecks -DiffCSV .\persistences.csv -OutputCSV .\findings.csv 
+
+      .EXAMPLE
+      Find-AllPersistence -DiffCSV .\persistences.csv -OutputCSV .\findings.csv | Where-Object Classification -Like "MITRE ATT&CK T*"
+      Enumerate all persistence techniques implanted on the local machine, filter out the ones in the persistences.csv file, save the results in findings.csv and output to console only the persistences which are classified under the MITRE ATT&CK framework.
 
       .NOTES
-
       This script tries to enumerate all persistence techniques that may have been deployed on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the script didn't find anything the machine is clean.
      
       .LINK
-
       https://github.com/last-byte/PersistenceSniper
   #>
   
