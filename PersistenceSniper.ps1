@@ -26,7 +26,7 @@ function Find-AllPersistence
 
       .PARAMETER IncludeHighFalsePositivesChecks
 
-      Switch: Forces Persistence Sniper to also call a number of functions with checks which are more difficult to filter and in turn can cause a lot of false positives.
+      Switch: Forces PersistenceSniper to also call a number of functions with checks which are more difficult to filter and in turn can cause a lot of false positives.
 	    
       .PARAMETER OutputCSV
 

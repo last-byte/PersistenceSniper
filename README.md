@@ -1,19 +1,24 @@
 ![](resources/persistencesniper.png)
-# Persistence Sniper
-Persistence Sniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines.
+# PersistenceSniper
+PersistenceSniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines.
 
 ## The Why
 Why writing such a tool, you might ask. Well, for starters, I tried looking around and I did not find a tool which suited my particular use case, which was looking for known persistence techniques, automatically, across multiple machines, while also being able to quickly and easily parse and compare results. Sure, [Sysinternals' Autoruns](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) is an amazing tool and it's definitely worth using, but, given it outputs results in non-standard formats and can't be run remotely unless you do some shenanigans with its command line equivalent, I did not find it a good fit for me. Plus, some of the techniques I implemented so far in PersistenceSniper have not been implemented into Autoruns yet, as far as I know. Anyway, if what you need is an easy to use, GUI based tool with lots of already implemented features, Autoruns is the way to go, otherwise let PersistenceSniper have a shot, it won't miss it :)
 
 ## Usage
-Using Persistence Sniper is as simple as:
+Using PersistenceSniper is as simple as:
 ```
 PS C:\> git clone https://github.com/last-byte/PersistenceSniper
 PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper.ps1
 PS C:\> Find-AllPersistence
 ```
 
-Persistence Sniper's `Find-AllPersistence` returns an array of objects of type PSCustomObject with the following properties:
+If you need a detailed explanation of how to use the tool or which parameters are available and they work, PersistenceSniper's `Find-AllPersistence` supports Powershell's help features, so you can get detailed, updated help by using the following command after importing the module:
+```  
+Get-Help -Name Find-AllPersistence -Full
+```
+
+PersistenceSniper's `Find-AllPersistence` returns an array of objects of type PSCustomObject with the following properties:
 ```
 $PersistenceObject = [PSCustomObject]@{
       "ComputerName" = $ComputerName
@@ -54,7 +59,7 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 ## Dealing with false positives
 Let's face it, hunting for persistence techniques also comes with having to deal with a lot of false positives. This happens because, while some techniques are almost never legimately used, many indeed are by legit software which needs to autorun on system boot or user login.
 
-This poses a challenge, which in many environments can be tackled by creating a CSV file containing known false positives. If your organization deploys systems using something like a golden image, you can run Persistence Sniper on a system you just created, get a CSV of the results and use it to filter out results on other machines. This approach comes with the following benefits:
+This poses a challenge, which in many environments can be tackled by creating a CSV file containing known false positives. If your organization deploys systems using something like a golden image, you can run PersistenceSniper on a system you just created, get a CSV of the results and use it to filter out results on other machines. This approach comes with the following benefits:
 - Not having to manage a whitelist of persistences which can be tedious and error-prone;
 - Tailoring the false positives to the organizations, and their organizational units, which use the tool;
 - Making it harder for attackers who want to blend in false positives by not publicly disclosing them in the tool's code.
@@ -68,7 +73,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 ![](resources/findallpersistenceexample02.png)
 
 ## Looking for persistences by taking incremental snapshots
-One cool way to use Persistence Sniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
+One cool way to use PersistenceSniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
 
 ## Persistence techniques implemented so far
 The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following 27 techniques have been implemented successfully:
