@@ -13,7 +13,7 @@ PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper.ps1
 PS C:\> Find-AllPersistence
 ```
 
-If you need a detailed explanation of how to use the tool or which parameters are available and they work, PersistenceSniper's `Find-AllPersistence` supports Powershell's help features, so you can get detailed, updated help by using the following command after importing the module:
+If you need a detailed explanation of how to use the tool or which parameters are available and how they work, PersistenceSniper's `Find-AllPersistence` supports Powershell's help features, so you can get detailed, updated help by using the following command after importing the module:
 ```  
 Get-Help -Name Find-AllPersistence -Full
 ```
