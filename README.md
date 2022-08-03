@@ -1,5 +1,6 @@
-<img src="resources/persistencesniper.png" width="500" height="500" style="display: block; margin: 0 auto;">
-
+<p align="center">
+<img src="resources/persistencesniper.png" width="500" height="500">
+</p>
 [![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![downloads](https://img.shields.io/powershellgallery/dt/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) 
 # PersistenceSniper
 PersistenceSniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on [Powershell Gallery](https://www.powershellgallery.com/packages/PersistenceSniper/).
