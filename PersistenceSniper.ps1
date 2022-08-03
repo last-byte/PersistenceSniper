@@ -4,7 +4,7 @@
 
     .GUID 210d8657-1c60-4aa4-8a21-ae1cf88d200e
 
-    .AUTHOR Federico @last0x00 Lagrasta, Riccardo @dottor_morte Ancarani
+    .AUTHOR Federico @last0x00 Lagrasta
 
     .DESCRIPTION This script tries to enumerate all the persistence methods implanted on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the script didn't find anything the machine is clean.
 
@@ -34,6 +34,7 @@
 #>
 
 #Requires -RunAsAdministrator
+
 function Find-AllPersistence
 { 
   <#
@@ -88,8 +89,7 @@ function Find-AllPersistence
       Enumerate all persistence techniques implanted on the local machine, filter out the ones in the persistences.csv file, save the results in findings.csv and output to console only the persistences which are classified under the MITRE ATT&CK framework.
   #>
   
-  Param(
-        
+  Param( 
     [Parameter(Position = 0)]
     [String[]]
     $ComputerName = $null,
@@ -108,7 +108,6 @@ function Find-AllPersistence
   )
   
   $ScriptBlock = {
-    $hostname = hostname
     $ErrorActionPreference = 'SilentlyContinue'
     $VerbosePreference = $Using:VerbosePreference
     $hostname = ([Net.Dns]::GetHostByName($env:computerName)).HostName
@@ -1079,6 +1078,50 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
     
+    function Get-DotNetDebugger
+    {
+      Write-Verbose -Message "$hostname - Getting .NET Debugger properties..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $dotNetDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Microsoft\.NETFramework" -Name DbgManagedDebugger 
+        if($dotNetDebugger.DbgManagedDebugger)
+        {
+          Write-Verbose -Message "$hostname - [!] Found DbgManagedDebugger under the $(Convert-Path -Path $hive)\SOFTWARE\Microsoft\.NETFramework key which deserve investigation!"
+          $propPath = Convert-Path -Path $dotNetDebugger.PSPath
+          $propPath += '\DbgManagedDebugger'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'DbgManagedDebugger Custom Debugger' -Classification 'Hexacorn Technique N.4' -Path $propPath -Value $dotNetDebugger.DbgManagedDebugger -AccessGained 'System/User' -Note "The executable in the DbgManagedDebugger property of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Wow6432Node\Microsoft\.NETFramework is run when a .NET process crashes. Gained access depends on whose context the debugged process runs in." -Reference 'https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+    
+        $dotNetDebugger = Get-ItemProperty -Path "$hive\SOFTWARE\Wow6432Node\Microsoft\.NETFramework" -Name DbgManagedDebugger 
+        if($dotNetDebugger.DbgManagedDebugger)
+        {
+          Write-Verbose -Message "$hostname - [!] Found DbgManagedDebugger under the $(Convert-Path -Path $hive)\SOFTWARE\Wow6432Node\Microsoft\.NETFramework key which deserve investigation!"
+          $propPath = Convert-Path -Path $dotNetDebugger.PSPath
+          $propPath += '\DbgManagedDebugger'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Wow6432Node DbgManagedDebugger Custom Debugger' -Classification 'Hexacorn Technique N.4' -Path $propPath -Value $dotNetDebugger.DbgManagedDebugger -AccessGained 'System/User' -Note "The executable in the DbgManagedDebugger property of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Wow6432Node\Microsoft\.NETFramework is run when a .NET 32 bit process on a 64 bit system crashes. Gained access depends on whose context the debugged process runs in." -Reference 'https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }
+      Write-Verbose -Message '' 
+    }
+    
+    function Get-ErrorHandlerCmd
+    {
+      Write-Verbose -Message "$hostname - Checking if C:\WINDOWS\Setup\Scripts\ contains a file called ErrorHandler.cmd..."
+      $errorHandlerCmd = Get-ChildItem -Path 'C:\WINDOWS\Setup\Scripts\ErrorHandler.cmd'
+      if($errorHandlerCmd)
+      {
+        Write-Verbose -Message "$hostname - [!] Found C:\WINDOWS\Setup\Scripts\ErrorHandler.cmd!"          
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'ErrorHandler.cmd Hijacking' -Classification 'Hexacorn Technique N.135' -Path "C:\WINDOWS\Setup\Scripts\" -Value "ErrorHandler.cmd" -AccessGained 'User' -Note "The content of C:\WINDOWS\Setup\Scripts\ErrorHandler.cmd is read whenever some tools under C:\WINDOWS\System32\oobe\ (e.g. Setup.exe) fail to run for any reason." -Reference 'https://www.hexacorn.com/blog/2022/01/16/beyond-good-ol-run-key-part-135/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      } 
+      Write-Verbose -Message ''
+    }
+    
     Write-Verbose -Message "$hostname - Starting execution..."
 
     Get-RunAndRunOnce
@@ -1107,6 +1150,8 @@ function Find-AllPersistence
     Get-LsaSecurityPackages
     Get-WinlogonNotificationPackages
     Get-ExplorerTools
+    Get-DotNetDebugger
+    Get-ErrorHandlerCmd
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {
@@ -1159,5 +1204,4 @@ function Find-AllPersistence
   }
   
   Write-Verbose -Message 'Script execution finished.'  
-  
 }
