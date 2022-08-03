@@ -1,16 +1,44 @@
-﻿#Requires -RunAsAdministrator
+﻿<#PSScriptInfo
+
+    .VERSION 0.9
+
+    .GUID 210d8657-1c60-4aa4-8a21-ae1cf88d200e
+
+    .AUTHOR Federico @last0x00 Lagrasta, Riccardo @dottor_morte Ancarani
+
+    .DESCRIPTION This script tries to enumerate all the persistence methods implanted on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the script didn't find anything the machine is clean.
+
+    .COMPANYNAME @APTortellini
+
+    .COPYRIGHT CC0 1.0 Universal
+
+    .TAGS Windows Persistence Detection Blue Team
+
+    .LICENSEURI https://creativecommons.org/publicdomain/zero/1.0/
+
+    .PROJECTURI https://github.com/last-byte/PersistenceSniper
+
+    .ICONURI https://github.com/last-byte/PersistenceSniper/blob/main/resources/persistencesniper.png
+
+    .EXTERNALMODULEDEPENDENCIES
+
+    .REQUIREDSCRIPTS
+
+    .EXTERNALSCRIPTDEPENDENCIES
+
+    .RELEASENOTES
+    This is still a beta. Only a subset of all the currently known persistence techniques has been implemented so far.
+
+    .PRIVATEDATA
+
+#>
+
+#Requires -RunAsAdministrator
 function Find-AllPersistence
 { 
   <#
       .SYNOPSIS
-
-      This script tries to enumerate all the persistence methods implanted on a compromised machine.
-
-      Function: Find-AllPersistence
-      Authors: Federico `last` Lagrasta, Twitter: @last0x00; Riccardo Ancarani, Twitter: @dottor_morte
-      License: https://creativecommons.org/publicdomain/zero/1.0/
-      Required Dependencies: None
-      Optional Dependencies: None
+      Find-AllPersistence is PersistenceSniper's main function. All the other functions defined in it are used by Find-AllPersistence to gather information on potential persistence techniques implanted on the machines PersistenceSniper is run on.
 
       .DESCRIPTION
       Enumerate all the persistence methods found on a machine and print them for the user to see.
@@ -58,12 +86,6 @@ function Find-AllPersistence
       .EXAMPLE
       Find-AllPersistence -DiffCSV .\persistences.csv -OutputCSV .\findings.csv | Where-Object Classification -Like "MITRE ATT&CK T*"
       Enumerate all persistence techniques implanted on the local machine, filter out the ones in the persistences.csv file, save the results in findings.csv and output to console only the persistences which are classified under the MITRE ATT&CK framework.
-
-      .NOTES
-      This script tries to enumerate all persistence techniques that may have been deployed on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the script didn't find anything the machine is clean.
-     
-      .LINK
-      https://github.com/last-byte/PersistenceSniper
   #>
   
   Param(
