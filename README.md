@@ -1,4 +1,4 @@
-<img src="resources/persistencesniper.png" width="500" height="500">
+<img src="resources/persistencesniper.png" width="500" height="500" class="center">
 
 [![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![downloads](https://img.shields.io/powershellgallery/dt/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) 
 # PersistenceSniper
