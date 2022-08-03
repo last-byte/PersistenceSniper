@@ -104,6 +104,7 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [LSA Authentication Packages DLL](https://attack.mitre.org/techniques/T1547/002/)    
 - [x] [LSA Security Packages DLL](https://attack.mitre.org/techniques/T1547/005/)  
 - [x] [Winlogon Notify Packages DLL](https://attack.mitre.org/techniques/T1547/004/) 
+- [x] [Explorer Tools Hijacking](https://www.hexacorn.com/blog/2017/01/18/beyond-good-ol-run-key-part-55/) 
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
