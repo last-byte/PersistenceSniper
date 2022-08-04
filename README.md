@@ -58,7 +58,7 @@ Of course, being PersistenceSniper a Powershell-based tool, some cool tricks can
 ![](https://blog.notso.pro/img/findallpersistenceexample03.png)
 
 ## Interpreting results
-As already introduced, `Find-AllPersistence` outputs an array of Powershell Custom Objects. Each object has the following properties, which can be used to filter, sort and better understand the different techniques the function looks for:
+As already introduced, `Find-AllPersistence` outputs an array of PS Custom Objects. Each object has the following properties, which can be used to filter, sort and better understand the different techniques the function looks for:
 - ComputerName: this is fairly straightforward. If you run `Find-AllPersistence` without a `-ComputerName` parameter, PersistenceSniper will run only on the local machine. Otherwise it will run on the remote computer(s) you specify;
 - Technique: this is the name of the technique itself, as it's commonly known in the community;
 - Classification: this property can be used to quickly identify techniques based on their MITRE ATT&CK technique and subtechnique number. For those techniques which don't have a MITRE ATT&CK classification, other classifications are used, the most common being [Hexacorn's one](https://www.hexacorn.com/blog/2017/01/28/beyond-good-ol-run-key-all-parts/) since a lot of techniques were discovered by him. When a technique's source cannot be reliably identified, the "Uncatalogued Technique N.#" classification is used; 
