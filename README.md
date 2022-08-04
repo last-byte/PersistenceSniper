@@ -1,4 +1,4 @@
-[![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) 
+[![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/1.0) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/1.0) 
 
 <table class="tg">
 <thead>
