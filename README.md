@@ -9,7 +9,7 @@
 <tbody>
   <tr>
     <td class="tg-0pky"><p align="center">
-<img src="resources/persistencesniper.png">
+<img src="resources/persistencesniper.png" width="75%">
 </p><p>PersistenceSniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/>Powershell Gallery</a>.</p></td>
   </tr>
 </tbody>
