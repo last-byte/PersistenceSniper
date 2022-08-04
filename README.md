@@ -120,6 +120,7 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [Explorer Tools Hijacking](https://www.hexacorn.com/blog/2017/01/18/beyond-good-ol-run-key-part-55/) 
 - [x] [.NET DbgManagedDebugger](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/) 
 - [x] [ErrorHandler.cmd Hijacking](https://www.hexacorn.com/blog/2022/01/16/beyond-good-ol-run-key-part-135/) 
+- [x] [WMI Subscriptions](https://attack.mitre.org/techniques/T1546/003/) 
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
