@@ -1,5 +1,5 @@
 <p align="center">
-<img src="resources/persistencesniper.png" width="500" height="500">
+<img src="resources/persistencesniper.png" width="50%">
 </p>
 
 # PersistenceSniper  
