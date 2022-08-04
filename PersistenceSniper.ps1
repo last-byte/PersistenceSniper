@@ -18,7 +18,7 @@
 
     .PROJECTURI https://github.com/last-byte/PersistenceSniper
 
-    .ICONURI https://github.com/last-byte/PersistenceSniper/blob/main/resources/persistencesniper.png
+    .ICONURI https://github.com/last-byte/PersistenceSniper/blob/main/resources/persistencesniper2.png
 
     .EXTERNALMODULEDEPENDENCIES
 
