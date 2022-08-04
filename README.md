@@ -1,11 +1,26 @@
-<p align="center">
+[![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![downloads](https://img.shields.io/powershellgallery/dt/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) 
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
+</style>
+<table class="tg">
+<thead>
+  <tr>
+    <th class="tg-0pky"><h1 align=center>PersistenceSniper</h1></th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="tg-0pky"><p align="center">
 <img src="resources/persistencesniper.png" width="50%">
-</p>
-
-# PersistenceSniper  
-
-[![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![downloads](https://img.shields.io/powershellgallery/dt/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper)](https://www.powershellgallery.com/packages/PersistenceSniper/)  
-PersistenceSniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on [Powershell Gallery](https://www.powershellgallery.com/packages/PersistenceSniper/).
+</p><p>PersistenceSniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/>Powershell Gallery</a>.</p></td>
+  </tr>
+</tbody>
+</table>
 
 ## The Why
 Why writing such a tool, you might ask. Well, for starters, I tried looking around and I did not find a tool which suited my particular use case, which was looking for known persistence techniques, automatically, across multiple machines, while also being able to quickly and easily parse and compare results. Sure, [Sysinternals' Autoruns](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) is an amazing tool and it's definitely worth using, but, given it outputs results in non-standard formats and can't be run remotely unless you do some shenanigans with its command line equivalent, I did not find it a good fit for me. Plus, some of the techniques I implemented so far in PersistenceSniper have not been implemented into Autoruns yet, as far as I know. Anyway, if what you need is an easy to use, GUI based tool with lots of already implemented features, Autoruns is the way to go, otherwise let PersistenceSniper have a shot, it won't miss it :)
