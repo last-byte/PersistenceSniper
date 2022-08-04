@@ -9,7 +9,7 @@
 <tbody>
   <tr>
     <td class="tg-0pky"><p align="center">
-<img src="resources/persistencesniper.png" width="60%">
+<img src="https://blog.notso.pro/img/persistencesniper.png" width="60%">
 </p><p>PersistenceSniper is a Powershell script that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/>Powershell Gallery</a>.</p></td>
   </tr>
 </tbody>
@@ -51,11 +51,11 @@ This allows for easy output formatting and filtering. Let's say you only want to
 PS C:\> Find-AllPersistence | Where-Object "Access Gained" -EQ "System"
 ```
 
-![](resources/findallpersistenceexample01.png)
+![](https://blog.notso.pro/img/findallpersistenceexample01.png)
 
 Of course, being PersistenceSniper a Powershell-based tool, some cool tricks can be performed, like passing its output to `Out-GridView` in order to have a GUI-based table to interact with.
 
-![](resources/findallpersistenceexample03.png)
+![](https://blog.notso.pro/img/findallpersistenceexample03.png)
 
 ## Interpreting results
 As already introduced, `Find-AllPersistence` outputs an array of Powershell Custom Objects. Each object has the following properties, which can be used to filter, sort and better understand the different techniques the function looks for:
@@ -83,7 +83,7 @@ This poses a challenge, which in many environments can be tackled by creating a 
 PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 ```
 
-![](resources/findallpersistenceexample02.png)
+![](https://blog.notso.pro/img/findallpersistenceexample02.png)
 
 ## Looking for persistences by taking incremental snapshots
 One cool way to use PersistenceSniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
