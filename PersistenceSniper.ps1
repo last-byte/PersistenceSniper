@@ -1121,6 +1121,33 @@ function Find-AllPersistence
       } 
       Write-Verbose -Message ''
     }
+
+    function Get-WMIEventsSubscrition
+    {
+      Write-Verbose -Message "$hostname - Checking WMI Subscriptions..."
+      $cmdEventConsumer = Get-WMIObject -Namespace root\Subscription -Class CommandLineEventConsumer
+      if ($cmdEventConsumer)
+      {
+        foreach ( $cmdEntry in ($cmdEventConsumer))
+        {
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'WMI Event Subscription' -Classification 'MITRE ATT&CK T1546.003' -Path $cmdEntry.__PATH -Value "CommandLineTemplate: $($cmdEntry.CommandLineTemplate) / ExecutablePath: $($cmdEntry.ExecutablePath)" -AccessGained 'System' -Note "WMI Events subscriptions can be used to link script/command executions to specific events. Here we list the active consumer events, but you may want to review also existing Filters (with Get-WMIObject -Namespace root\Subscription -Class __EventFilter) and Bindings (with Get-WMIObject -Namespace root\Subscription -Class __FilterToConsumerBinding)" -Reference 'https://attack.mitre.org/techniques/T1546/003/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }
+
+      $scriptEventConsumer = Get-WMIObject -Namespace root\Subscription -Class ActiveScriptEventConsumer
+      if ($scriptEventConsumer)
+      {
+        foreach ( $scriptEntry in ($scriptEventConsumer))
+        {
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'WMI Event Subscription' -Classification 'MITRE ATT&CK T1546.003' -Path $scriptEntry.__PATH -Value "ScriptingEngine: $($scriptEntry.ScriptingEngine) / ScriptFileName: $($scriptEntry.ScriptFileName) / ScriptText: $($scriptEntry.ScriptText)"  -AccessGained 'System' -Note "WMI Events subscriptions can be used to link script/command executions to specific events. Here we list the active consumer events, but you may want to review also existing Filters (with Get-WMIObject -Namespace root\Subscription -Class __EventFilter) and Bindings (with Get-WMIObject -Namespace root\Subscription -Class __FilterToConsumerBinding)" -Reference 'https://attack.mitre.org/techniques/T1546/003/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }
+      Write-Verbose -Message ''
+    }
     
     Write-Verbose -Message "$hostname - Starting execution..."
 
@@ -1152,6 +1179,7 @@ function Find-AllPersistence
     Get-ExplorerTools
     Get-DotNetDebugger
     Get-ErrorHandlerCmd
+    Get-WMIEventsSubscrition
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {
