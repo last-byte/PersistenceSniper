@@ -146,20 +146,100 @@ function Find-AllPersistence
         $Note = $null,
       
         [String]
-        $Reference = $null
+        $Reference = $null,
+		
+		[String]
+		$Signature = $null ,
+		
+		[Bool]
+		$IsBuiltinBinary = $false,
+		
+		[Bool]
+		$IsLolbin = $false
       )
       $PersistenceObject = [PSCustomObject]@{
-        'Hostname' = $Hostname
-        'Technique'    = $Technique
-        'Classification' = $Classification
-        'Path'         = $Path
-        'Value'        = $Value
-        'Access Gained' = $AccessGained
-        'Note'         = $Note
-        'Reference'    = $Reference
+        'Hostname' 			= $Hostname
+        'Technique'    		= $Technique
+        'Classification' 	= $Classification
+        'Path'         		= $Path
+        'Value'       	 	= $Value
+        'Access Gained' 	= $AccessGained
+        'Note'         		= $Note
+        'Reference'    		= $Reference
+		'Signature'	  		= FindCertificateInfo(GetExecutableFromPath($Value))
+		'IsBuiltinBinary'	= IsBuiltinBinary(GetExecutableFromPath($Value))
+		'IsLolbin'			= IsLolbin(GetExecutableFromPath($Value))
       } 
       return $PersistenceObject
     }
+	
+	
+	function IsLolbin($executable)
+	{
+		# To get an updated list of lolbins 
+		# curl https://lolbas-project.github.io/# | grep -E "bin-name\">(.*)\.exe<" -o | cut -d ">" -f 2 | cut -d "<" -f 1 
+		[String[]]$lolbins = "APPINSTALLER.EXE", "ASPNET_COMPILER.EXE", "AT.EXE", "ATBROKER.EXE", "BASH.EXE", "BITSADMIN.EXE", "CERTOC.EXE", "CERTREQ.EXE", "CERTUTIL.EXE", "CMD.EXE", "CMDKEY.EXE", "CMDL32.EXE", "CMSTP.EXE", "CONFIGSECURITYPOLICY.EXE", "CONHOST.EXE", "CONTROL.EXE", "CSC.EXE", "CSCRIPT.EXE", "DATASVCUTIL.EXE", "DESKTOPIMGDOWNLDR.EXE", "DFSVC.EXE", "DIANTZ.EXE", "DISKSHADOW.EXE", "DNSCMD.EXE", "ESENTUTL.EXE", "EVENTVWR.EXE", "EXPAND.EXE", "EXPLORER.EXE", "EXTEXPORT.EXE", "EXTRAC32.EXE", "FINDSTR.EXE", "FINGER.EXE", "FLTMC.EXE", "FORFILES.EXE", "FTP.EXE", "GFXDOWNLOADWRAPPER.EXE", "GPSCRIPT.EXE", "HH.EXE", "IMEWDBLD.EXE", "IE4UINIT.EXE", "IEEXEC.EXE", "ILASM.EXE", "INFDEFAULTINSTALL.EXE", "INSTALLUTIL.EXE", "JSC.EXE", "MAKECAB.EXE", "MAVINJECT.EXE", "MICROSOFT.WORKFLOW.COMPILER.EXE", "MMC.EXE", "MPCMDRUN.EXE", "MSBUILD.EXE", "MSCONFIG.EXE", "MSDT.EXE", "MSHTA.EXE", "MSIEXEC.EXE", "NETSH.EXE", "ODBCCONF.EXE", "OFFLINESCANNERSHELL.EXE", "ONEDRIVESTANDALONEUPDATER.EXE", "PCALUA.EXE", "PCWRUN.EXE", "PKTMON.EXE", "PNPUTIL.EXE", "PRESENTATIONHOST.EXE", "PRINT.EXE", "PRINTBRM.EXE", "PSR.EXE", "RASAUTOU.EXE", "RDRLEAKDIAG.EXE", "REG.EXE", "REGASM.EXE", "REGEDIT.EXE", "REGINI.EXE", "REGISTER-CIMPROVIDER.EXE", "REGSVCS.EXE", "REGSVR32.EXE", "REPLACE.EXE", "RPCPING.EXE", "RUNDLL32.EXE", "RUNONCE.EXE", "RUNSCRIPTHELPER.EXE", "SC.EXE", "SCHTASKS.EXE", "SCRIPTRUNNER.EXE", "SETTINGSYNCHOST.EXE", "STORDIAG.EXE", "SYNCAPPVPUBLISHINGSERVER.EXE", "TTDINJECT.EXE", "TTTRACER.EXE", "VBC.EXE", "VERCLSID.EXE", "WAB.EXE", "WLRMDR.EXE", "WMIC.EXE", "WORKFOLDERS.EXE", "WSCRIPT.EXE", "WSRESET.EXE", "WUAUCLT.EXE", "XWIZARD.EXE", "ACCCHECKCONSOLE.EXE", "ADPLUS.EXE", "AGENTEXECUTOR.EXE", "APPVLP.EXE", "BGINFO.EXE", "CDB.EXE", "COREGEN.EXE", "CSI.EXE", "DEVTOOLSLAUNCHER.EXE", "DNX.EXE", "DOTNET.EXE", "DUMP64.EXE", "DXCAP.EXE", "EXCEL.EXE", "FSI.EXE", "FSIANYCPU.EXE", "MFTRACE.EXE", "MSDEPLOY.EXE", "MSXSL.EXE", "NTDSUTIL.EXE", "POWERPNT.EXE", "PROCDUMP(64).EXE", "RCSI.EXE", "REMOTE.EXE", "SQLDUMPER.EXE", "SQLPS.EXE", "SQLTOOLSPS.EXE", "SQUIRREL.EXE", "TE.EXE", "TRACKER.EXE", "UPDATE.EXE", "VSIISEXELAUNCHER.EXE", "VISUALUIAVERIFYNATIVE.EXE", "VSJITDEBUGGER.EXE", "WFC.EXE", "WINWORD.EXE", "WSL.EXE"
+		foreach($lolbin in ($lolbins)){
+			$exe = Split-Path -path $executable -Leaf
+			if ($exe.ToUpper() -eq ($lolbin)) {
+				return $true
+			}
+		}
+		return $false
+	}
+
+	function IsBuiltinBinary($executable)
+	{
+		try {
+			$authenticode = Get-AuthenticodeSignature($executable)
+			return $authenticode.IsOSBinary
+		} 
+		catch { 
+			return $false
+		}
+	}
+	
+	function FindCertificateInfo($executable)
+	{
+		try {
+			$authenticode = Get-AuthenticodeSignature($executable)
+			$formattedString = [string]::Format(“Status = {0}, Subject = {1}”,$authenticode.Status, $authenticode.SignerCertificate.Subject)
+			return $formattedString
+		} 
+		catch { 
+			return "Unknown error occurred"
+		}
+	}
+	function GetExecutableFromPath($pathName) {
+	  # Taken from: https://stackoverflow.com/questions/24449113/how-can-i-extract-path-to-executable-of-all-services-with-powershell
+	  # input can have quotes, spaces, and args like any of these:
+	  #   C:\WINDOWS\system32\lsass.exe
+	  #   "C:\Program Files\Realtek\Audio\HDA\RtkAudioService64.exe"
+	  #   C:\WINDOWS\system32\svchost.exe -k netsvcs -p
+	  #   "C:\Program Files\Websense\Websense Endpoint\wepsvc.exe" -k ss
+
+	  # if it starts with quote, return what's between first and second quotes
+	  if ($pathName.StartsWith("`"")) {
+		$pathName = $pathName.Substring(1)
+		$index = $pathName.IndexOf("`"")
+		if ($index -gt -1) {
+		  return $pathName.Substring(0, $index)
+		}
+		else {
+		  # this should never happen... but whatever, return something
+		  return $pathName
+		}
+	  }
+	  
+	  # else if it contains spaces, return what's before the first space
+	  if ($pathName.Contains(" ")) {
+		$index = $pathName.IndexOf(" ")
+		return $pathName.Substring(0, $index)
+	  }
+	  
+	  # else it's a simple path
+	  return $pathName
+	}
 
     function Get-RunAndRunOnce
     {
@@ -188,7 +268,7 @@ function Find-AllPersistence
             {
               $access = 'User'
             }
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -220,7 +300,7 @@ function Find-AllPersistence
             {
               $access = 'User'
             }
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -263,7 +343,7 @@ function Find-AllPersistence
                 } # skip the property if it's powershell built-in property
                 $propPath = Convert-Path -Path $ifeProps.PSPath
                 $propPath += '\' + $prop.Name
-                $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Image File Execution Options' -Classification 'MITRE ATT&CK T1546.012' -Path $propPath -Value $ifeProps.($prop.Name) -AccessGained 'System/User' -Note 'Executables in the Debugger property of a subkey of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\ are run instead of the program corresponding to the subkey. Gained access depends on whose context the debugged process runs in.' -Reference 'https://attack.mitre.org/techniques/T1546/012/'
+                $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Image File Execution Options' -Classification 'MITRE ATT&CK T1546.012' -Path $propPath -Value $ifeProps.($prop.Name) -AccessGained 'System/User' -Note 'Executables in the Debugger property of a subkey of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\ are run instead of the program corresponding to the subkey. Gained access depends on whose context the debugged process runs in.' -Reference 'https://attack.mitre.org/techniques/T1546/012/' 
                 $null = $persistenceObjectArray.Add($PersistenceObject)
                 $PersistenceObject
               }
@@ -345,7 +425,7 @@ function Find-AllPersistence
             } # skip the property if it's powershell built-in property
             $propPath = Convert-Path -Path $aeDebugger.PSPath
             $propPath += '\' + $prop.Name
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AEDebug Custom Debugger' -Classification 'Hexacorn Technique N.4' -Path $propPath -Value $aeDebugger.($prop.Name) -AccessGained 'System/User' -Note "The executable in the Debugger property of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction. A value of 'C:\Windows\system32\vsjitdebugger.exe' might be a false positive if you have Visual Studio Community installed." -Reference 'https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AEDebug Custom Debugger' -Classification 'Hexacorn Technique N.4' -Path $propPath -Value $aeDebugger.($prop.Name) -AccessGained 'System/User' -Note "The executable in the Debugger property of (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AeDebug is run when a process crashes. Gained access depends on whose context the debugged process runs in; if the Auto property of the same registry key is set to 1, the debugger starts without user interaction. A value of 'C:\Windows\system32\vsjitdebugger.exe' might be a false positive if you have Visual Studio Community installed." -Reference 'https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/' 
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -1148,6 +1228,21 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+	
+	function Get-WindowsServices
+	{
+			Write-Verbose -Message "$hostname - Checking Windows Services..."
+			$services = Get-WmiObject win32_service 
+			
+			if($services){
+				foreach ( $service in ($services)) {
+				$PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Windows Service' -Classification 'MITRE ATT&CK T1543.003' -Path $service.Name  -Value $service.PathName  -AccessGained 'System' -Note "Adversaries may create or modify Windows services to repeatedly execute malicious payloads as part of persistence. When Windows boots up, it starts programs or applications called services that perform background system functions."  -Reference 'https://attack.mitre.org/techniques/T1543/003/'
+				  $null = $persistenceObjectArray.Add($PersistenceObject)
+				  $PersistenceObject
+				}
+			}
+		
+	}
     
     Write-Verbose -Message "$hostname - Starting execution..."
 
@@ -1180,6 +1275,7 @@ function Find-AllPersistence
     Get-DotNetDebugger
     Get-ErrorHandlerCmd
     Get-WMIEventsSubscrition
+	Get-WindowsServices
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {
