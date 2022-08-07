@@ -166,9 +166,9 @@ function Find-AllPersistence
         'Access Gained' 	= $AccessGained
         'Note'         		= $Note
         'Reference'    		= $Reference
-        'Signature'	  		= FindCertificateInfo(GetExecutableFromPath($Value))
-        'IsBuiltinBinary'	= IsBuiltinBinary(GetExecutableFromPath($Value))
-        'IsLolbin'			= IsLolbin(GetExecutableFromPath($Value))
+        'Signature'	  		= Find-CertificateInfo(Get-ExecutableFromPath($Value))
+        'IsBuiltinBinary'	= IsBuiltinBinary(Get-ExecutableFromPath($Value))
+        'IsLolbin'			= IsLolbin(Get-ExecutableFromPath($Value))
       } 
       return $PersistenceObject
     }
@@ -199,7 +199,7 @@ function Find-AllPersistence
       }
     }
 	
-    function FindCertificateInfo($executable)
+    function Find-CertificateInfo($executable)
     {
       try {
         $authenticode = Get-AuthenticodeSignature($executable)
@@ -210,7 +210,9 @@ function Find-AllPersistence
         return "Unknown error occurred"
       }
     }
-    function GetExecutableFromPath($pathName) {
+    function Get-ExecutableFromPath($pathName) 
+    {
+      $ErrorActionPreference = 'Continue'
       # Taken from: https://stackoverflow.com/questions/24449113/how-can-i-extract-path-to-executable-of-all-services-with-powershell
       # input can have quotes, spaces, and args like any of these:
       #   C:\WINDOWS\system32\lsass.exe
@@ -219,26 +221,36 @@ function Find-AllPersistence
       #   "C:\Program Files\Websense\Websense Endpoint\wepsvc.exe" -k ss
 
       # if it starts with quote, return what's between first and second quotes
-      if ($pathName.StartsWith("`"")) {
+      if ($pathName.StartsWith("`"")) 
+      {
         $pathName = $pathName.Substring(1)
         $index = $pathName.IndexOf("`"")
-        if ($index -gt -1) {
-          return $pathName.Substring(0, $index)
+        if ($index -gt -1) 
+        {
+          $path = $pathName.Substring(0, $index)
         }
         else {
           # this should never happen... but whatever, return something
-          return $pathName
+          $path = $pathName
         }
       }
-	  
-      # else if it contains spaces, return what's before the first space
-      if ($pathName.Contains(" ")) {
-        $index = $pathName.IndexOf(" ")
-        return $pathName.Substring(0, $index)
+      else
+      {
+        if ($pathName.Contains(" ")) {
+          $index = $pathName.IndexOf(" ")
+          $path = $pathName.Substring(0, $index)
+        }
+        else
+        {
+          $path = $pathName
+        }
       }
-	  
-      # else it's a simple path
-      return $pathName
+      
+      if((Test-Path -Path $path -PathType leaf) -eq $false)
+      {
+        $path = (Get-Command $path).Source
+      }
+      return $path
     }
 
     function Get-RunAndRunOnce
@@ -1235,11 +1247,7 @@ function Find-AllPersistence
       $services = Get-CimInstance -ClassName win32_service | Select-Object Name,DisplayName,State,PathName
       foreach ( $service in $services) 
       {
-        $path = ($service.PathName -split '\s+')[0] # split the path and take only the executable in case there are arguments
-        if((Test-Path -Path $path -PathType leaf) -eq $false)
-        {
-          $path = "C:\Windows\System32\$path"
-        }
+        $path = Get-ExecutableFromPath($service.PathName)
         if ((Test-Path -Path $path -PathType leaf) -and -not (Get-AuthenticodeSignature -FilePath $path ).IsOSBinary) 
         {
           $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Windows Service' -Classification 'MITRE ATT&CK T1543.003' -Path $service.Name  -Value $service.PathName  -AccessGained 'System' -Note "Adversaries may create or modify Windows services to repeatedly execute malicious payloads as part of persistence. When Windows boots up, it starts programs or applications called services that perform background system functions."  -Reference 'https://attack.mitre.org/techniques/T1543/003/'
