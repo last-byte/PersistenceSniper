@@ -22,7 +22,7 @@ Why writing such a tool, you might ask. Well, for starters, I tried looking arou
 Using PersistenceSniper is as simple as:
 ```
 PS C:\> git clone https://github.com/last-byte/PersistenceSniper
-PS C:\> . .\PersistenceSniper\PersistenceSniper.ps1
+PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper.psm1
 PS C:\> Find-AllPersistence
 ```
 
