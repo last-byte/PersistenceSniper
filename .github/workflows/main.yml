@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Publish PowerShell Module
-        uses: pcgeek86/publish-powershell-module-action@v19
+        uses: pcgeek86/publish-powershell-module-action@v20
         with:
           # The NuGet API Key for PowerShell Gallery, with permission to push this module.
           NuGetApiKey: ${{ secrets.PS_GALLERY_KEY }}
