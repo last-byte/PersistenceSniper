@@ -1,8 +1,8 @@
 ﻿<#PSScriptInfo
 
-    .VERSION 1.1
+    .VERSION 1.2
 
-    .GUID 210d8657-1c60-4aa4-8a21-ae1cf88d200e
+    .GUID e870ebd8-e4d0-4de3-aea6-58a85d7b3200
 
     .AUTHOR Federico @last0x00 Lagrasta
 
