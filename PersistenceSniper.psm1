@@ -236,7 +236,6 @@ function Find-AllPersistence
         [String]
         $pathName
       )
-      $ErrorActionPreference = 'Continue' 
       $pathName = $pathName -Replace '"'
       
       $match = [regex]::Match($pathName, '[A-Za-z0-9\s]+\.(exe|dll|ocx|cmd|bat|ps1)')
@@ -832,7 +831,6 @@ function Find-AllPersistence
   
     function Get-ServiceDlls
     {
-      $ErrorActionPreference = 'Continue'
       Write-Verbose -Message "$hostname - Getting Service DLLs inside the registry..."
       foreach($hive in $systemAndUsersHives)
       {
@@ -859,7 +857,6 @@ function Find-AllPersistence
                 {
                   $dllPath = "C:\Windows\System32\$dllPath"
                 }
-                Write-Host $dllPath
                 if ((Get-IfSafeLibrary $dllPath) -EQ $false) 
                 {
                   Write-Verbose -Message "$hostname - [!] Found subkeys under the $(Convert-Path -Path $hive) Services key which deserve investigation!"
@@ -1181,10 +1178,14 @@ function Find-AllPersistence
         $secPackages = Get-ItemProperty -Path "$hive\SYSTEM\CurrentControlSet\Control\Lsa" -Name 'Security Packages' 
         if($secPackages)
         {
-          $dlls = $secPackages.'Security Packages' -split '\s+'
+          $packageString = $secPackages.'Security Packages' -replace '"',''
+          $dlls = $packageString -split '\s+'
           foreach ($dll in $dlls)
           {
-            $dllPath = $dll -replace '"','' # security packages are often delimited by double quotes so we want to get rid of them
+            if($dll -eq "")
+            {
+              continue
+            }
             if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
             {
               $dllPath = "C:\Windows\System32\$dllPath.dll"
