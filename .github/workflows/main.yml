@@ -27,5 +27,6 @@ jobs:
       - name: Publish PowerShell Module
         uses: pcgeek86/publish-powershell-module-action@v20
         with:
+          modulePath: ../../
           # The NuGet API Key for PowerShell Gallery, with permission to push this module.
           NuGetApiKey: ${{ secrets.PS_GALLERY_KEY }}
