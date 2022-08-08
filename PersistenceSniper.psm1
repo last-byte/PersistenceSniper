@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This is still a beta. Only a subset of all the currently known persistence techniques has been implemented so far.
+    This release contains a number of improvements as well as new persistence techniques. The output also contains member properties detailing if the binaries used are builtin binaries and/or LOLbins.
 
     .PRIVATEDATA
 
