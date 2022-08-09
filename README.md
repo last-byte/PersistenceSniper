@@ -102,7 +102,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 One cool way to use PersistenceSniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
 
 ## Persistence techniques implemented so far
-The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following 31 techniques have been implemented successfully:
+The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following 32 techniques have been implemented successfully:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
@@ -134,6 +134,7 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [.NET DbgManagedDebugger](https://www.hexacorn.com/blog/2013/09/19/beyond-good-ol-run-key-part-4/) 
 - [x] [ErrorHandler.cmd Hijacking](https://www.hexacorn.com/blog/2022/01/16/beyond-good-ol-run-key-part-135/) 
 - [x] [WMI Subscriptions](https://attack.mitre.org/techniques/T1546/003/) 
+- [x] [Windows Services](https://attack.mitre.org/techniques/T1543/003/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
