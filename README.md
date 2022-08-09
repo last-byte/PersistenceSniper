@@ -41,14 +41,17 @@ Get-Help -Name Find-AllPersistence -Full
 PersistenceSniper's `Find-AllPersistence` returns an array of objects of type PSCustomObject with the following properties:
 ```
 $PersistenceObject = [PSCustomObject]@{
-      "ComputerName" = $ComputerName
-      "Technique" = $Technique
-      "Classification" = $Classification
-      "Path" = $Path
-      "Value" = $Value
-      "Access Gained" = $AccessGained
-      "Note" = $Note
-      "Reference" = $Reference
+      'ComputerName' = $ComputerName
+      'Technique' = $Technique
+      'Classification' = $Classification
+      'Path' = $Path
+      'Value' = $Value
+      'Access Gained' = $AccessGained
+      'Note' = $Note
+      'Reference' = $Reference
+      'Signature' = Find-CertificateInfo (Get-ExecutableFromCommandLine $Value)
+      'IsBuiltinBinary' = Get-IfBuiltinBinary (Get-ExecutableFromCommandLine $Value)
+      'IsLolbin' = Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
 } 
 ```
 
@@ -73,7 +76,10 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 - Value: this is the value of the registry property the techniques uses, or the name of the executable/library used, in case it's a technique which relies on planting something on the filesystem;
 - Access Gained: this is the kind of access the technique grants the attacker. If it's a Run key under HKCU for example, the access gained will be at a user level, while if it's under HKLM it will be at system level;
 - Note: this is a quick explanation of the technique, so that its workings can be easily grasped;
-- Reference: this is a link to a more in-depth explanation of the technique, should the analyst need to study it more.
+- Reference: this is a link to a more in-depth explanation of the technique, should the analyst need to study it more;
+- Signature: this property reports information on the signature of the binary associated with the persistence technique found;
+- IsBuiltinBinary: this boolean property reports if the binary associated with the persistence technique found is normally found on the Operating System and is considered builtin;
+- IsLolbin: this boolean property is set to True if the the binary associated with the persistence technique found is a [LOLBin](https://lolbas-project.github.io/).
 
 
 ## Dealing with false positives
