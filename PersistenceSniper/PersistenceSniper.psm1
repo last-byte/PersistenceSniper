@@ -1356,6 +1356,23 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
     
+    function Get-PowerAutomate
+    {
+      Write-Verbose -Message "$hostname - Checking Power Automate presence..."
+
+      $PADFolder = "$env:ProgramData\Microsoft\Power Automate\Logs"
+      $LastPALog = Get-ChildItem -Path $PADFolder | Sort-Object LastWriteTime -Descending| Select-Object -First 1
+
+      if ($LastPALog)
+      {
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Power Automate' -Classification 'Uncatalogued Technique N.8' -Path $PADFolder -Value $LastPALog -AccessGained 'System/User' -Note "'Power Automate' is an RPA (Robotic Process Automation) made available by Microsoft. It can runs on standalone system or through Azure Tenants. Given the high number of functions available and the 'legit source' of these executables and processes, it could be used for malicious intent as well. The presence of the logs means that the system is in some way running these flows. Review if they are legit or not (last log is shown in Value)." -Reference 'https://github.com/mbrg/defcon30/tree/main/No_Code_Malware'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+
+      Write-Verbose -Message ''
+    }
+
     Write-Verbose -Message "$hostname - Starting execution..."
 
     Get-RunAndRunOnce
@@ -1388,6 +1405,7 @@ function Find-AllPersistence
     Get-ErrorHandlerCmd
     Get-WMIEventsSubscrition
     Get-WindowsServices
+    Get-PowerAutomate
   
     if($IncludeHighFalsePositivesChecks.IsPresent)
     {
