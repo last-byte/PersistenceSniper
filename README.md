@@ -38,6 +38,13 @@ If you need a detailed explanation of how to use the tool or which parameters ar
 Get-Help -Name Find-AllPersistence -Full
 ```
 
+If you only want to check for a single persistence technique, you can rely on `Find-AllPersistence`'s `PersistenceMethod` parameter. Say, for example, you only want to check for persistences implanted through the Run and RunOnce registry keys:
+```
+PS C:\> Find-AllPersistence -PersistenceMethod RunAndRunOnce
+```
+The `PersistenceMethod` parameter uses Powershell's `ValidateSet` directive, so you can tab through it instead of writing down the persistence method of choice.
+![](https://blog.notso.pro/img/pssnipervalidateset.gif)
+
 PersistenceSniper's `Find-AllPersistence` returns an array of objects of type PSCustomObject with the following properties:
 ```
 $PersistenceObject = [PSCustomObject]@{

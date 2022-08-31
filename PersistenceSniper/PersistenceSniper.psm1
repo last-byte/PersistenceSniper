@@ -1,6 +1,6 @@
 ﻿<#PSScriptInfo
 
-    .VERSION 1.4.0
+    .VERSION 1.5.0
 
     .GUID e870ebd8-e4d0-4de3-aea6-58a85d7b3200
 
@@ -44,6 +44,9 @@ function Find-AllPersistence
       .DESCRIPTION
       Enumerate all the persistence methods found on a machine and print them for the user to see.
 
+      .PARAMETER PersistenceMethod
+      Optional, choose a single persistence method to check for. Default value is All.
+
       .PARAMETER ComputerName
       Optional, an array of computernames to run the script on.
 
@@ -59,6 +62,10 @@ function Find-AllPersistence
       .EXAMPLE
       Find-AllPersistence
       Enumerate low false positive persistence techniques implanted on the local machine.
+      
+      .EXAMPLE
+      Find-AllPersistence -PersistenceMethod RunAndRunOnce
+      Enumerate only persistence techniques implanted on the local machine relying on the Run and RunOnce registry keys.
 
       .EXAMPLE
       $Persistences = Find-AllPersistence
@@ -89,20 +96,57 @@ function Find-AllPersistence
       Enumerate all persistence techniques implanted on the local machine, filter out the ones in the persistences.csv file, save the results in findings.csv and output to console only the persistences which are classified under the MITRE ATT&CK framework.
   #>
   
-  Param( 
+  Param(
     [Parameter(Position = 0)]
+    [ValidateSet(
+        'All',    
+        'RunAndRunOnce',
+        'ImageFileExecutionOptions',
+        'NLDPDllOverridePath',
+        'AeDebug',
+        'WerFaultHangs',
+        'CmdAutoRun',
+        'ExplorerLoad',
+        'WinlogonUserinit',
+        'WinlogonShell',
+        'TerminalProfileStartOnUserLogin',
+        'AppCertDlls',
+        'ServiceDlls',
+        'GPExtensionDlls',
+        'WinlogonMPNotify',
+        'CHMHelperDll',
+        'HHCtrlHijacking',
+        'StartupPrograms',
+        'UserInitMprScript',
+        'AutodialDLL',
+        'LsaExtensions',
+        'ServerLevelPluginDll',
+        'LsaPasswordFilter',
+        'LsaAuthenticationPackages',
+        'LsaSecurityPackages',
+        'WinlogonNotificationPackages',
+        'ExplorerTools',
+        'DotNetDebugger',
+        'ErrorHandlerCmd',
+        'WMIEventsSubscrition',
+        'WindowsServices',
+        'AppPaths'
+    )]
+    $PersistenceMethod = 'All',
+     
+    [Parameter(Position = 1)]
     [String[]]
     $ComputerName = $null,
     
-    [Parameter(Position = 1)]
+    [Parameter(Position = 2)]
     [String]
     $DiffCSV = $null, 
     
-    [Parameter(Position = 2)]
+    [Parameter(Position = 3)]
     [Switch]
     $IncludeHighFalsePositivesChecks,
         
-    [Parameter(Position = 3)]
+    [Parameter(Position = 4)]
     [String]
     $OutputCSV = $null  
   )
@@ -1358,43 +1402,208 @@ function Find-AllPersistence
     
     Write-Verbose -Message "$hostname - Starting execution..."
 
-    Get-RunAndRunOnce
-    Get-ImageFileExecutionOptions
-    Get-NLDPDllOverridePath
-    Get-AeDebug
-    Get-WerFaultHangs
-    Get-CmdAutoRun
-    Get-ExplorerLoad
-    Get-WinlogonUserinit
-    Get-WinlogonShell
-    Get-TerminalProfileStartOnUserLogin
-    Get-AppCertDlls
-    Get-ServiceDlls
-    Get-GPExtensionDlls
-    Get-WinlogonMPNotify
-    Get-CHMHelperDll
-    Get-HHCtrlHijacking
-    Get-StartupPrograms
-    Get-UserInitMprScript
-    Get-AutodialDLL
-    Get-LsaExtensions
-    Get-ServerLevelPluginDll
-    Get-LsaPasswordFilter
-    Get-LsaAuthenticationPackages
-    Get-LsaSecurityPackages
-    Get-WinlogonNotificationPackages
-    Get-ExplorerTools
-    Get-DotNetDebugger
-    Get-ErrorHandlerCmd
-    Get-WMIEventsSubscrition
-    Get-WindowsServices
-  
-    if($IncludeHighFalsePositivesChecks.IsPresent)
+    if($PersistenceMethod -eq 'All')
     {
-      Write-Verbose -Message "$hostname - You have used the -IncludeHighFalsePositivesChecks switch, this may generate a lot of false positives since it includes checks with results which are difficult to filter programmatically..."
-      Get-AppPaths
+      Get-RunAndRunOnce
+      Get-ImageFileExecutionOptions
+      Get-NLDPDllOverridePath
+      Get-AeDebug
+      Get-WerFaultHangs
+      Get-CmdAutoRun
+      Get-ExplorerLoad
+      Get-WinlogonUserinit
+      Get-WinlogonShell
+      Get-TerminalProfileStartOnUserLogin
+      Get-AppCertDlls
+      Get-ServiceDlls
+      Get-GPExtensionDlls
+      Get-WinlogonMPNotify
+      Get-CHMHelperDll
+      Get-HHCtrlHijacking
+      Get-StartupPrograms
+      Get-UserInitMprScript
+      Get-AutodialDLL
+      Get-LsaExtensions
+      Get-ServerLevelPluginDll
+      Get-LsaPasswordFilter
+      Get-LsaAuthenticationPackages
+      Get-LsaSecurityPackages
+      Get-WinlogonNotificationPackages
+      Get-ExplorerTools
+      Get-DotNetDebugger
+      Get-ErrorHandlerCmd
+      Get-WMIEventsSubscrition
+      
+      if($IncludeHighFalsePositivesChecks.IsPresent)
+      {
+        Write-Verbose -Message "$hostname - You have used the -IncludeHighFalsePositivesChecks switch, this may generate a lot of false positives since it includes checks with results which are difficult to filter programmatically..."
+        Get-AppPaths
+        Get-WindowsServices
+      }
     }
     
+    else
+    {
+      switch($PersistenceMethod)
+      {
+        'RunAndRunOnce'
+        {
+          Get-RunAndRunOnce
+          break
+        }
+        'ImageFileExecutionOptions'
+        {
+          Get-ImageFileExecutionOptions
+          break
+        }
+        'NLDPDllOverridePath'
+        {
+          Get-NLDPDllOverridePath
+          break
+        }
+        'AeDebug'
+        {
+          Get-AeDebug
+          break
+        }
+        'WerFaultHangs'
+        {
+          Get-WerFaultHangs
+          break
+        }
+        'CmdAutoRun'
+        {
+          Get-CmdAutoRun
+          break
+        }
+        'ExplorerLoad'
+        {
+          Get-ExplorerLoad
+          break
+        }
+        'WinlogonUserinit'
+        {
+          Get-WinlogonUserinit
+          break
+        }
+        'WinlogonShell'
+        {
+          Get-WinlogonShell
+          break
+        }
+        'TerminalProfileStartOnUserLogin'
+        {
+          Get-TerminalProfileStartOnUserLogin
+          break
+        }
+        'AppCertDlls'
+        {
+          Get-AppCertDlls
+          break
+        }
+        'ServiceDlls'
+        {
+          Get-ServiceDlls
+          break
+        }
+        'GPExtensionDlls'
+        {
+          Get-GPExtensionDlls
+          break
+        }
+        'WinlogonMPNotify'
+        {
+          Get-WinlogonMPNotify
+          break
+        }
+        'CHMHelperDll'
+        {
+          Get-CHMHelperDll
+          break
+        }
+        'HHCtrlHijacking'
+        {
+          Get-HHCtrlHijacking
+          break
+        }
+        'StartupPrograms'
+        {
+          Get-StartupPrograms
+          break
+        }
+        'UserInitMprScript'
+        {
+          Get-UserInitMprScript
+          break
+        }
+        'AutodialDLL'
+        {
+          Get-AutodialDLL
+          break
+        }
+        'LsaExtensions'
+        {
+          Get-LsaExtensions       
+          break  
+        }
+        'ServerLevelPluginDll'
+        {
+          Get-ServerLevelPluginDll
+          break        
+        }
+        'LsaPasswordFilter'
+        {
+          Get-LsaPasswordFilter
+          break         
+        }
+        'LsaAuthenticationPackages'
+        {
+          Get-LsaAuthenticationPackages
+          break          
+        }
+        'LsaSecurityPackages'
+        {
+          Get-LsaSecurityPackages 
+          break         
+        }
+        'WinlogonNotificationPackages'
+        {
+          Get-WinlogonNotificationPackages
+          break          
+        }
+        'ExplorerTools'
+        {
+          Get-ExplorerTools
+          break          
+        }
+        'DotNetDebugger'
+        {
+          Get-DotNetDebugger
+          break         
+        }
+        'ErrorHandlerCmd'
+        {
+          Get-ErrorHandlerCmd
+          break
+        }
+        'WMIEventsSubscrition'
+        {
+          Get-WMIEventsSubscrition
+          break
+        }
+        'WindowsServices'
+        {
+          Get-WindowsServices
+          break
+        }
+        'AppPaths'
+        {
+          Get-AppPaths
+          break
+        }
+      }
+    }
+
     Write-Verbose -Message "$hostname - Execution finished."
   }
   
@@ -1442,10 +1651,10 @@ function Find-AllPersistence
   Write-Verbose -Message 'Script execution finished.'  
 }
 # SIG # Begin signature block
-# MIIVkwYJKoZIhvcNAQcCoIIVhDCCFYACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUTwU+Mmv1Vd8sbzpDgFDI9L/7
-# PIKgghH0MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQ5SCqJnR028JsZU4ngEF3ywr
+# PjOgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -1506,56 +1715,56 @@ function Find-AllPersistence
 # oIJB0kak6pSzEu4I64U6gZs7tS/dGNSljf2OSSnRr7KWzq03zl8l75jy+hOds9TW
 # SenLbjBQUGR96cFr6lEUfAIEHVC1L68Y1GGxx4/eRI82ut83axHMViw1+sVpbPxg
 # 51Tbnio1lB93079WPFnYaOvfGAA0e0zcfF/M9gXr+korwQTh2Prqooq2bYNMvUoU
-# KD85gnJ+t0smrWrb8dee2CvYZXD5laGtaAxOfy/VKNmwuWuAh9kcMIIGXzCCBMeg
-# AwIBAgIQUcDbMQiubrJYsDZABW3UATANBgkqhkiG9w0BAQwFADBUMQswCQYDVQQG
-# EwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSswKQYDVQQDEyJTZWN0aWdv
-# IFB1YmxpYyBDb2RlIFNpZ25pbmcgQ0EgUjM2MB4XDTIyMDgxNTAwMDAwMFoXDTI1
-# MDgxNDIzNTk1OVowVDELMAkGA1UEBhMCSVQxDTALBgNVBAgMBFJvbWExGjAYBgNV
-# BAoMEUZlZGVyaWNvIExhZ3Jhc3RhMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0
-# YTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAPq7+7B1CjWSZJs8lRnY
-# BLBdC2DkmFrDGB8zGAWKdFPh/PqgXjHv1qgkTd+YYNQ1cmSQ/wZULtMyS6bta/Rp
-# /OAh4kxQY2R+4UhIupy70uPkRBIUNCyerV0XE/npP0GdNksjmEvb4dCouYDFhy/5
-# M4psO5A/SDMv9e5IP4FDA0jRkuhSw2e0/aTcPmjJmkZPrKaRMEag2YVhWMPR20iX
-# cATmOZv/akPso6eRW/mxS0+UpR57rAxXhXJRC9foBWYXaIDa0iWOadzH+9ukeNn/
-# 4AIeERc69Fn5nlYgarboD72lBgwtwF3Xq40oiWrP3ObTbwUF9vv/4JS7q0nnuqvJ
-# Hsf1snoMUbG3JOmjyNzCB6Ktw6SvZPyQ/bcKpTryW99GEXib14DMzAt1l5xIPuEO
-# kvrMp1U94uoWbh7ij74cHG75vVAmSq/0MTDEo9c1F//fUI2uDpSNc9KzJkdE2XnN
-# HqNPCSRfrWvnmESVoW4+ecUVBoZ0xCNUwLjfI7Y9m86dDUUhOK0JDzXrqfHO00uu
-# CrW0byzYic2bb6k/vNMv93sttJErSScKjBH/ZJyQySAwz7h3FkH8vyTC9diibu2h
-# sLiBKOC6+mff53FWfgCMTc4e4s0Z+fdpNC80IvMSSbNEnkiyEcpiD23Z0Ny7Gnd0
-# IhDI7fKeJSjrFtkUNBElJMzNAgMBAAGjggGrMIIBpzAfBgNVHSMEGDAWgBQPKssg
-# hyi47G9IritUpimqF6TNDDAdBgNVHQ4EFgQUjK+D/PvF6iUYa+lkE59Z6KyTj24w
-# DgYDVR0PAQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwEwYDVR0lBAwwCgYIKwYBBQUH
-# AwMwSgYDVR0gBEMwQTA1BgwrBgEEAbIxAQIBAwIwJTAjBggrBgEFBQcCARYXaHR0
-# cHM6Ly9zZWN0aWdvLmNvbS9DUFMwCAYGZ4EMAQQBMEkGA1UdHwRCMEAwPqA8oDqG
-# OGh0dHA6Ly9jcmwuc2VjdGlnby5jb20vU2VjdGlnb1B1YmxpY0NvZGVTaWduaW5n
-# Q0FSMzYuY3JsMHkGCCsGAQUFBwEBBG0wazBEBggrBgEFBQcwAoY4aHR0cDovL2Ny
-# dC5zZWN0aWdvLmNvbS9TZWN0aWdvUHVibGljQ29kZVNpZ25pbmdDQVIzNi5jcnQw
-# IwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMCAGA1UdEQQZMBeB
-# FWZlZC5sYWdAcHJvdG9ubWFpbC5jaDANBgkqhkiG9w0BAQwFAAOCAYEAA5yOz1Rg
-# cV89wbdWSM29po3EDeX6IIS2BTA7UAbZ+PtMHbGTQzgUs23e0U5/jbmaYqty7vaX
-# v2SMNM/V7OL3mCpPBvVwPB5l8WKi4pTQLYPb8dFem5/oiV9BTiKjap6j5UKaoOW2
-# VS5izOKUZZxDSOhGGnjcKTFezaS2SnCZzb8tra/WbTszbI6Zt7tqEmfAcI3mlUJ9
-# hwoJvR8ZI+jhORhoyaaBzBk6dKCWjxQbAbKiWnFjUoC24ZRSKf6KhWaRxk767FUp
-# 91o1TQbI5OAKlMfGKxRVCFUl+1g9C7CA2asjVMDckqQMzrq63f6sxKtnef4PPek2
-# 2vTTQsQ7zxyQJlVz94u8Tv+nXKV5oYFnY/bvkFJok/1RJW3Ou18y1PlkhU9mKPDP
-# Ot+3Lelrm9hrAHVxwtILpSXyj5vuE8RJkVKmAg0e7rOiAOtmlAOsVUID0KtI9Szb
-# eGdASl5HfEhABRwNE3MWkHm4ho5p9h/vB9WoSYaqR/TIF0oxc8JhMP8AMYIDCTCC
-# AwUCAQEwaDBUMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVk
-# MSswKQYDVQQDEyJTZWN0aWdvIFB1YmxpYyBDb2RlIFNpZ25pbmcgQ0EgUjM2AhBR
-# wNsxCK5usliwNkAFbdQBMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
-# gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQjG+KaHeERuDSpSD7IKh4H
-# N3ZS9TANBgkqhkiG9w0BAQEFAASCAgCeQiNd4bFC2i7ii8A4gLkpZoBwpQiTW47u
-# EXP/SRxTwcJUnK2aPoE2WWbM7ZGtVdFEgPBjqhe877jsktcT5Z3m4Mf1FC+j/euC
-# oXpx25WXLT6WuO0uMSHecXtJiGuffI8DTdUvNUw8u3AFb5Tu+wnG2LPTdQGF/2iz
-# /7ykOEqt5gOmsEhk7Y33mH8RlvlJkxcslq+aEtQCxmh7WhlMDnfMSDXuRj8TXpRS
-# qAK6Bgrd0c3APlZQw16Lt+Wp+f4TsvusFlvEcxxw9gj5QPyup9Qbw4r1SQaIVRt4
-# R8OVLUL6xrn5jeIx5dEgr9NuXf77cWtnUqH+ksKZYCNMR+AKBq7uA2H4uo59r5/2
-# CYd+MbdhUqxiQ8j0Ycq/XtVhr/NbCQNSq4C+SrkzAAujqWgPltr/uwPzvPDcrDuc
-# 6GGYMqLQho3x4K0BXdueYVJD2epo6gj3IytZYHkULmlEXB3p3rlDsuJbbjE4Hfbi
-# RvdzXBAqY3HNEJWPrFUR0R9/Ey8H4Tu4Ho24/tmDpuyhc3DDW907c+TioNYN2uF7
-# H8qZWVCc+YDa2KgzuktqHYqlp1tiZp3h3jAILvIlMQxa9BOmC37EInmHM01iTAqO
-# KaYFdfCgJwN9W9CkL3xcJauo/OEbo0bIJhzb2F0/SFL3huhfISs37UFk7GQiHY6S
-# oEPHAonTZw==
+# KD85gnJ+t0smrWrb8dee2CvYZXD5laGtaAxOfy/VKNmwuWuAh9kcMIIGYDCCBMig
+# AwIBAgIRANqGcyslm0jf1LAmu7gf13AwDQYJKoZIhvcNAQEMBQAwVDELMAkGA1UE
+# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGln
+# byBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNjAeFw0yMjA4MzAwMDAwMDBaFw0y
+# NTA4MjkyMzU5NTlaMFQxCzAJBgNVBAYTAklUMQ0wCwYDVQQIDARSb21hMRowGAYD
+# VQQKDBFGZWRlcmljbyBMYWdyYXN0YTEaMBgGA1UEAwwRRmVkZXJpY28gTGFncmFz
+# dGEwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCWUdcGbyUbCFFFZ6Mj
+# e/e1M0dGv9oWUKwB6O1XNQGLG5wMpsiJZRc1w6uV9iYsqIb2K5MyrbL7YNhMMgSv
+# JGM51OCphdX4MN2JKyG8oZs0CGnMfKckJfNw0rukD513VlL9s34Y1A+4xyfdgJ8q
+# pKz455vUM5PA3emF6ydRwdAa7vPRATqKqa/E6jUABluW0juMsMwNLucJeudD4lvL
+# INY8WBxdb7U6a9XmMqW67DdrrE93nenuDF1VYL3R4s0c9bYXvnLF45im/NjMnK+F
+# MJZfZq1OuE7DsTKNQ2KLru5i5luZAYnrFEP9U2oGZI1G149beOuzGBVju5TS5yqr
+# L9uVOaoRxvHpFUuZXE9Wxn7eNTAuA1NBfSqvwlJuL9xLStCR+Ep20euMihqKyROV
+# Jy/UbXbA9haB9D4xnGWPhdMbzh62og2taeCyUSR/ITznssDa8gj2Zz2dqdKI985M
+# BWlb+rIcnhTvfguBLo5aGvOcTepcxjcgs7WRq9AoL+tmXsFlHbnenmOXeyypfS1B
+# /L3WVND4sKU4RImFw1DHRUdUhtzv/OzXWn1MyTH/W1v0L8AMe/5YBmexHlcOaB05
+# xZJNxy3BQVXg/DEWAgIdZlatw7vrTPzROV4VPUkU1IPe/ZCJNe9Ij2ICa2kmb2I1
+# 8dVZ3m1o8T8P6Lq1rB/+d8yTMQIDAQABo4IBqzCCAacwHwYDVR0jBBgwFoAUDyrL
+# IIcouOxvSK4rVKYpqhekzQwwHQYDVR0OBBYEFD9Q0l33XgRE0bG3DGVYiX6xoX03
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBMGA1UdJQQMMAoGCCsGAQUF
+# BwMDMEoGA1UdIARDMEEwNQYMKwYBBAGyMQECAQMCMCUwIwYIKwYBBQUHAgEWF2h0
+# dHBzOi8vc2VjdGlnby5jb20vQ1BTMAgGBmeBDAEEATBJBgNVHR8EQjBAMD6gPKA6
+# hjhodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNDb2RlU2lnbmlu
+# Z0NBUjM2LmNybDB5BggrBgEFBQcBAQRtMGswRAYIKwYBBQUHMAKGOGh0dHA6Ly9j
+# cnQuc2VjdGlnby5jb20vU2VjdGlnb1B1YmxpY0NvZGVTaWduaW5nQ0FSMzYuY3J0
+# MCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5zZWN0aWdvLmNvbTAgBgNVHREEGTAX
+# gRVmZWQubGFnQHByb3Rvbm1haWwuY2gwDQYJKoZIhvcNAQEMBQADggGBAJj2JGru
+# B4OuFoVRe64Tj83gGZbenpMtVVzLsSXzqoYv9Xy/+DdgQpBCksbCM7lL+BXbjlrO
+# aRAhtshMcPXyKC0LyUK/97fmuZSEd0uJv+5bA+8J+syr/Bm7mfy+Wp0y3vN/rH0Y
+# 6OuUm8YVnEsh3dN5LkYBtht0E4uOMhaAY8FvQ+UqoVO64IEYGZvfeIQxpeoOFcZ6
+# LXNTEPwUsXT6aBwrdzXoTthdzYPG1OZscG5t1A+Q4FzjPgye0asKDEcL6nIiLsgn
+# KFwVxJoOvSg+xpj4urUbQ5K5STKvy6FeN05JjN00w91pauOXowy+sWKsA2tk0sEj
+# 7GyXN5xpdmmpS9syU0Piom/9stGkGJurdoUPNcCCagSQ6+6lDVDhxSnMroR75hIS
+# lYKhmhoGgn1vWQqUwx7CywDXxMGY7GT+ufXCssa6xZT+Nn+CIaHpb4EJyrNdKN/m
+# uFkQgQqZUeeV0/azIa5L9T1IaEn1xhe2ETNqZCHeGzmpmvifXW/N9+/HZDGCAwow
+# ggMGAgEBMGkwVDELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRl
+# ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
+# ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
+# oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFHJKtF32xIKrg9OJftqk
+# bropmN7SMA0GCSqGSIb3DQEBAQUABIICABEBc6b9jI16z3jf/JDEgZqnEfnZfqCz
+# +IWsMIdH+rQ+Y63WgYa5v+Jcim7frnGMKCzeVwDPdpsxqehIeinAA/fBXaCINFNE
+# Bsy5jBzRJ7a5y0aYZGU32U3IS7lm7QEsEMXGz5U4hpvLEga4JYw0izyzz9otKWTq
+# upKAOI5QQRsXeUCqYzwCXpUVhuaGuIZP/XX7HH0r+vEqCX8DqHndgUoMEbcUnd0r
+# PVsGuR4wMOjJNKrKTEgfbn2in96CSwHtrjRLO0P1tbK8YuNHdPGqiWKsX6L3PZDx
+# pDIkvfFm8MdMV1vjF4+UW7KMU3vCBapYBpDGu8JYg+LzbTZAjy6WgeiAm42AjKJM
+# ybA5e9KOd2zGV6X+AZIenDMVWZgPxA/zb/MOJcZou8K8hDayIjZdxqFxjcg2Rmuh
+# 6mDtqm7gWScf5ehjiAoMwy/oMOYrXRBbrhhzWcc5RvZOm/qHPdo8wqsIOjA9jeWU
+# EzDLHvIopoyxjY6dfijVgtcd2pHpx5qqIkhHtp6m5G/KFurcDN4zqJjusNQldoLR
+# UcsIeG7RF1fp1Ctpn4tKiONYk/8Tf3sNbT/ud4pAbRQR8Hjf15upGgcbNj+TAOzG
+# dy4RvLQEbcnPnM5mqp3xTnFja9ZrASuEVa1wjJmj4STf/IemNz1mRGxy321g1BzJ
+# 26fnC+cdYZg2
 # SIG # End signature block
