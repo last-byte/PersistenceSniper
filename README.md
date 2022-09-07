@@ -143,6 +143,7 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [WMI Subscriptions](https://attack.mitre.org/techniques/T1546/003/) 
 - [x] [Windows Services](https://attack.mitre.org/techniques/T1543/003/)
 - [x] [Terminal Services InitialProgram](https://persistence-info.github.io/Data/tsinitialprogram.html)
+- [x] [Accessibility Tools Backdoor](https://attack.mitre.org/techniques/T1546/008/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:

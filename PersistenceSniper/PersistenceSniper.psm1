@@ -1,6 +1,6 @@
 ﻿<#PSScriptInfo
 
-    .VERSION 1.6.0
+    .VERSION 1.7.0
 
     .GUID e870ebd8-e4d0-4de3-aea6-58a85d7b3200
 
@@ -131,7 +131,8 @@ function Find-AllPersistence
         'WMIEventsSubscrition',
         'WindowsServices',
         'AppPaths',
-        'TerminalServicesInitialProgram'
+        'TerminalServicesInitialProgram',
+        'AccessibilityTools'
     )]
     $PersistenceMethod = 'All',
      
@@ -1455,6 +1456,55 @@ function Find-AllPersistence
       Write-Verbose -Message '' 
     }
     
+    function Get-AccessibilityTools
+    {   
+      Write-Verbose -Message "$hostname - Looking for accessibility tools backdoors..."
+      
+      $accessibilityTools = @(
+        "$env:windir\System32\sethc.exe",
+        "$env:windir\System32\osk.exe",
+        "$env:windir\System32\Narrator.exe",
+        "$env:windir\System32\Magnify.exe",
+        "$env:windir\System32\DisplaySwitch.exe"
+      )
+      
+      $cmdHash = Get-FileHash -LiteralPath $env:windir\System32\cmd.exe
+      $psHash = Get-FileHash -LiteralPath $env:windir\System32\WindowsPowerShell\v1.0\powershell.exe
+      $explorerHash = Get-FileHash -LiteralPath $env:windir\explorer.exe
+      
+      $backdoorHashes = [ordered]@{
+        $cmdHash.Hash = "$env:windir\System32\cmd.exe";
+        $psHash.Hash = "$env:windir\System32\WindowsPowerShell\v1.0\powershell.exe";
+        $explorerHash.Hash = "$env:windir\explorer.exe"
+      }
+      
+      foreach($tool in $accessibilityTools)
+      {
+        if((Get-AuthenticodeSignature -FilePath $tool).IsOSBinary -ne $true)
+        {
+          Write-Verbose -Message "$hostname - [!] Found a suspicious executable in place of of the accessibility tool $tool"
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Accessibility Tools Backdoor' -Classification 'MITRE ATT&CK T1546.008' -Path $tool -Value $tool -AccessGained 'System' -Note "Accessibility tools are executables that can be run from the lock screen of a Windows machine and are supposed to enable accessibility features like text to speech or zooming in on the screen. If an attacker replaces them with malicious or LOLBIN executables they can execute code with SYSTEM permission from a lock screen, effectively bypassing authentication. In this case, the accessibility tool in the Path field is not an OS executable, so it may have been replaced with a malicious, non-Microsoft executable." -Reference 'https://attack.mitre.org/techniques/T1546/008/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+        else
+        {
+          $toolHash = Get-FileHash -LiteralPath $tool
+          foreach($hash in $backdoorHashes.Keys)
+          { 
+            if($toolHash.Hash -eq $hash)
+            {
+              Write-Verbose -Message "$hostname - [!] Found a suspicious executable in place of of the accessibility tool $tool"
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Accessibility Tools Backdoor' -Classification 'MITRE ATT&CK T1546.008' -Path $tool -Value $backdoorHashes[$hash] -AccessGained 'System' -Note "Accessibility tools are executables that can be run from the lock screen of a Windows machine and are supposed to enable accessibility features like text to speech or zooming in on the screen. If an attacker replaces them with malicious or LOLBIN executables they can execute code with SYSTEM permission from a lock screen, effectively bypassing authentication. In this case, the accessibility tool in the Path field has been replaced with the binary in the Value field." -Reference 'https://attack.mitre.org/techniques/T1546/008/'
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+              $PersistenceObject
+            }
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
+    
     Write-Verbose -Message "$hostname - Starting execution..."
 
     if($PersistenceMethod -eq 'All')
@@ -1489,6 +1539,7 @@ function Find-AllPersistence
       Get-ErrorHandlerCmd
       Get-WMIEventsSubscrition
       Get-TSInitialProgram
+      Get-AccessibilityTools
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -1660,6 +1711,11 @@ function Find-AllPersistence
         'TerminalServicesInitialProgram'
         {
           Get-TSInitialProgram
+          break
+        }
+        'AccessibilityTools'
+        {
+          Get-AccessibilityTools
           break
         }
       }
