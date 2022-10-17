@@ -10,7 +10,7 @@
   <tr>
     <td class="tg-0pky"><p align="center">
 <img src="https://blog.notso.pro/img/persistencesniper2.png" width="60%">
-</p><p>PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a>. The tool is under active development with new releases coming out by the week, so make sure to use the up-to-date version!</p></td>
+</p><p>PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a>. The tool is under active development with new releases coming out by the week, so make sure to use the up-to-date version.</p></td>
   </tr>
 </tbody>
 </table>
