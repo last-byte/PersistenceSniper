@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1
+Fixes:
+  - the PSM1 is now also signed (it was not in v1.7.0)
+
 ## 1.7.0
 Features:
   - add support for accessibility tools backdoor detection
