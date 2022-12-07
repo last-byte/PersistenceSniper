@@ -1,5 +1,3 @@
-
-
 <table class="tg">
 <thead>
   <tr>
@@ -10,8 +8,9 @@
   <tr>
     <td class="tg-0pky"><p align="center">
 <img src="https://blog.notso.pro/img/persistencesniper2.png" width="60%">
+<p style="text-align:center"><a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/github/languages/top/last-byte/PersistenceSniper?label=Powershell" alt="language"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/p/PersistenceSniper?color=informational&amp;label=Platform" alt="platform badge"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/v/PersistenceSniper?label=PS%20Gallery%20Version" alt="version"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/dt/PersistenceSniper?label=Downloads" alt="downloads"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/github/workflow/status/last-byte/PersistenceSniper/CI?label=Github%20CI" alt="workflow"></a> <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/github/license/last-byte/PersistenceSniper?color=bright%20green&amp;label=License" alt="license"></a> <a href="https://twitter.com/last0x00"><img src="https://img.shields.io/twitter/follow/last0x00?style=social" alt="twitter"></a> <a href="https://twitter.com/dottor_morte"><img src="https://img.shields.io/twitter/follow/dottor_morte?style=social" alt="twitter_rick"></a></p>
 <p>PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a>. The tool is under active development with new releases coming out by the week, so make sure to use the up-to-date version.</p>
-<p>[![language](https://img.shields.io/github/languages/top/last-byte/PersistenceSniper?label=Powershell)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper?color=informational&label=Platform)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper?label=PS%20Gallery%20Version)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![downloads](https://img.shields.io/powershellgallery/dt/PersistenceSniper?label=Downloads)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![workflow](https://img.shields.io/github/workflow/status/last-byte/PersistenceSniper/CI?label=Github%20CI)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![license](https://img.shields.io/github/license/last-byte/PersistenceSniper?color=bright%20green&label=License)](https://creativecommons.org/publicdomain/zero/1.0/) [![twitter](https://img.shields.io/twitter/follow/last0x00?style=social)](https://twitter.com/last0x00) [![twitter_rick](https://img.shields.io/twitter/follow/dottor_morte?style=social)](https://twitter.com/dottor_morte)</p></td>
+</td>
   </tr>
 </tbody>
 </table>
