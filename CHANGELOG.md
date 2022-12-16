@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.8.0
+Features:
+   - Added the following persistence techniques:
+	- AMSI Providers
+	- Powershell Profiles 
+	- Silent Exit Monitor
+	- Telemetry Controller Commands
+	- RDP WDS Startup Programs
+	- Scheduled Tasks
+Fixes:
+   - Fixed minor typos here and there
+	
 ## 1.7.1
 Fixes:
   - the PSM1 is now also signed (it was not in v1.7.0)

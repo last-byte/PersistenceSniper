@@ -109,7 +109,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 One cool way to use PersistenceSniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
 
 ## Persistence techniques implemented so far
-The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following __34 techniques__ have been implemented successfully:
+The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following __39 techniques__ have been implemented successfully:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
@@ -144,6 +144,12 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [Windows Services](https://attack.mitre.org/techniques/T1543/003/)
 - [x] [Terminal Services InitialProgram](https://persistence-info.github.io/Data/tsinitialprogram.html)
 - [x] [Accessibility Tools Backdoor](https://attack.mitre.org/techniques/T1546/008/)
+- [x] [AMSI Providers](https://b4rtik.github.io/posts/antimalware-scan-interface-provider-for-persistence/)
+- [x] [Powershell Profiles](https://attack.mitre.org/techniques/T1546/013/)
+- [x] [Silent Exit Monitor](https://attack.mitre.org/techniques/T1546/012/)
+- [x] [Telemetry Controller](https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence/)
+- [x] [RDP WDS Startup Programs](https://persistence-info.github.io/Data/rdpwdstartupprograms.html)
+- [x] [Scheduled Tasks](https://attack.mitre.org/techniques/T1053/005/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:

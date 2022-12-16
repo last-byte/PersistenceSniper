@@ -1,8 +1,8 @@
 ﻿<#PSScriptInfo
 
-    .VERSION 1.7.1
+    .VERSION 1.8.0
 
-    .GUID e870ebd8-e4d0-4de3-aea6-58a85d7b3200
+    .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
     .AUTHOR Federico @last0x00 Lagrasta
 
@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This release contains a number of improvements as well as new persistence techniques. The output also contains member properties detailing if the binaries used are builtin binaries and/or LOLbins.
+    This release introduces detection for persistences implanted through AMSI providers, Powershell profiles, Telemetry commands, Scheduled tasks, RDP WDS startup programs, and Silent exit monitors.
 
     .PRIVATEDATA
 
@@ -80,8 +80,8 @@ function Find-AllPersistence
       Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV.
 
       .EXAMPLE
-      Find-AllPersistence -DiffCSV .\persistences.csv
-      Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV and output the results on another CSV.
+      Find-AllPersistence -DiffCSV .\persistences.csv -OutputCSV .\newPersistences.csv
+      Enumerate low false positive persistence techniques implanted on the local machine but show us only the persistences which are not in an input CSV named persistences.csv and output the results on another CSV named newPersistences.csv.
 
       .EXAMPLE
       Find-AllPersistence -ComputerName @('dc1.macrohard.lol', 'dc2.macrohard.lol') -IncludeHighFalsePositivesChecks -DiffCSV .\persistences.csv -OutputCSV .\findings.csv
@@ -132,7 +132,13 @@ function Find-AllPersistence
         'WindowsServices',
         'AppPaths',
         'TerminalServicesInitialProgram',
-        'AccessibilityTools'
+        'AccessibilityTools',
+        'AMSIProviders',
+        'PowershellProfiles',
+        'SilentExitMonitor',
+        'TelemetryController',
+        'RDPWDSStartupPrograms',
+        'ScheduledTasks'
     )]
     $PersistenceMethod = 'All',
      
@@ -1505,6 +1511,174 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
     
+    function Get-AMSIProviders
+    {
+      Write-Verbose -Message "$hostname - Getting AMSI providers..."
+      $legitAMSIGUID = '{2781761E-28E0-4109-99FE-B9D127C57AFE}' # this is the GUID of Microsoft's legitimate AMSI provider
+      $amsiProviders = Get-ChildItem -Path "HKLM:\SOFTWARE\Microsoft\AMSI\Providers\" 
+      foreach($key in $amsiProviders)
+      {
+        $keyGUID = $key.PSChildName
+        if($keyGUID -eq $legitAMSIGUID)
+        {
+          continue
+        }
+        Write-Verbose -Message "$hostname - [!] Found an unknown AMSI provider under the key HKLM\SOFTWARE\Microsoft\AMSI\Providers\$keyGUID which deserves investigation!"
+        $path = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\CLSID\$keyGUID\InprocServer32" -Name '(Default)').'(Default)'
+        if (-not ($path -like '*.dll')) # if the DLL is specified without a .dll, append it
+        {
+          $path = $path + '.dll'
+        }
+        if((Test-Path -Path $path -PathType leaf) -eq $false) # if the DLL is specified without a path, assume it's under System32
+        {
+          $path = "C:\Windows\System32\$path"
+        }
+        $propPath = "HKLM:\SOFTWARE\Classes\CLSID\$keyGUID\InprocServer32\(Default)"
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Fake AMSI Provider' -Classification 'Uncatalogued Technique N.9' -Path $propPath -Value $path -AccessGained 'System/User' -Note 'DLLs in the (Default) property of HKLM:\SOFTWARE\Classes\CLSID\$keyGUID\InprocServer32 where $keyGUID is a GUID listed under HKLM:\SOFTWARE\Microsoft\AMSI\Providers\ are considered AMSI providers and loaded by all processes also loading the .NET CLR.' -Reference 'https://b4rtik.github.io/posts/antimalware-scan-interface-provider-for-persistence/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+      
+      Write-Verbose -Message ''
+    }
+    
+    function Get-PowershellProfiles
+    {
+      Write-Verbose -Message "$hostname - Getting Powershell profiles..."
+      $script:powershellProfilesArray = [Collections.ArrayList]::new()
+      $systemProfile = Get-ChildItem 'C:\Windows\System32\WindowsPowerShell\v1.0\Profile.ps1'
+      $microsoftSystemProfile = Get-ChildItem 'C:\Windows\System32\WindowsPowerShell\v1.0\Microsoft.PowerShell_profile.ps1'
+      if($systemProfile)
+      {
+        $null = $powershellProfilesArray.Add($systemProfile)
+      }
+      if($microsoftSystemProfile)
+      {
+        $null = $powershellProfilesArray.Add($microsoftSystemProfile)
+      }
+      $userDirectories = Get-ChildItem -Path 'C:\Users\'
+      foreach($directory in $userDirectories)
+      {
+        $userProfile = Get-ChildItem -Path "$($directory.FullName)\Documents\WindowsPowerShell\Profile.ps1"
+        if($userProfile)
+        {
+          $null = $powershellProfilesArray.Add($userProfile)
+        }
+        $userProfile = Get-ChildItem -Path "$($directory.FullName)\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+        if($userProfile)
+        {
+          $null = $powershellProfilesArray.Add($userProfile)
+        }
+      }
+      foreach($profile in $powershellProfilesArray)
+      {
+        Write-Verbose -Message "$hostname - [!] Found a Powershell profile under $($profile.FullName) which deserves investigation!"
+        $path = $profile
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Powershell Profile' -Classification 'MITRE ATT&CK T1546.013' -Path $path.DirectoryName -Value $path.FullName -AccessGained 'User' -Note "Files named 'Profile.ps1' or 'Microsoft.PowerShell_profile.ps1' under System32's Powershell directory or a user's Documents\WindowsPowerShell folder are loaded whenever a user launches Powershell."  -Reference 'https://attack.mitre.org/techniques/T1546/013/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-SilentExitMonitor
+    {
+      Write-Verbose -Message "$hostname - Getting Silent exit monitors..."
+      $exitMonitors = Get-ChildItem -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\"
+      foreach($key in $exitMonitors)
+      {
+        $monitoredApp = $key.PSPath
+        $monitoringApp = (Get-ItemProperty $monitoredApp).MonitorProcess
+        Write-Verbose -Message "$hostname - [!] Found a silently monitored process under HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\ which deserves investigation!"
+        $propPath = Convert-Path -Path $monitoredApp
+        $propPath += '\MonitorProcess'
+        $path = $monitoringApp
+        if((Test-Path -Path $path -PathType leaf) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
+        {
+          $path = (Get-Command $path).Source
+        }
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Silent Process Exit Monitor' -Classification 'MITRE ATT&CK T1546.012' -Path $propPath -Value $path -AccessGained 'System/User' -Note 'Executables specified under subkeys of HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\ are run when the process associated with the subkey is terminated by another process.' -Reference 'https://attack.mitre.org/techniques/T1546/012/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+      
+      Write-Verbose -Message ''
+    }
+    
+    function Get-TelemetryController
+    {
+      Write-Verbose -Message "$hostname - Getting Telemetry controllers..."
+      $telemetryController = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\TelemetryController").Command
+      if($telemetryController)
+      {
+        $propPath = 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\TelemetryController\Command'
+        $path = $telemetryController
+        if((Test-Path -Path $path -PathType leaf) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
+        {
+          $path = (Get-Command $path).Source
+        }
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Telemetry Controller Command' -Classification 'Uncatalogued Technique N.10' -Path $propPath -Value $path -AccessGained 'System' -Note "Executables specified under the Command property of HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\TelemetryController\ are run by the Windows Compatibility Telemetry's binary named CompatTelRunner.exe" -Reference 'https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence/'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      } 
+      Write-Verbose -Message ''
+    }
+    
+    function Get-RDPWDSStartupPrograms
+    {
+      Write-Verbose -Message "$hostname - Getting RDP WDS startup programs"
+      $startupPrograms = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\rdpwd").StartupPrograms
+      if($startupPrograms)
+      {
+        $executables = $startupPrograms.split(',')
+        foreach($exe in $executables)
+        {
+          if($exe -eq 'rdpclip')
+          {
+            continue
+          }
+          $propPath = 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\rdpwd\StartupPrograms'
+          $path = $exe
+          if((Test-Path -Path $path -PathType leaf) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
+          {
+            $path = (Get-Command $path).Source
+          }
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'RDP WDS Startup Programs' -Classification 'Uncatalogued Technique N.11' -Path $propPath -Value $path -AccessGained 'System' -Note "Executables specified under the StartupPrograms property of HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\rdpwd are run whenever a user logs on the machine through remote desktop." -Reference 'https://persistence-info.github.io/Data/rdpwdstartupprograms.html'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        } 
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-ScheduledTasks
+    {
+      Write-Verbose -Message "$hostname - Getting scheduled tasks"
+      $tasks = Get-ScheduledTask
+      if($tasks)
+      {
+        foreach($task in $tasks)
+        {
+          $propPath = $task.TaskPath
+          $propPath += $task.TaskName
+          $path = ($task.Actions).Execute
+          if($task.UserId -eq 'SYSTEM')
+          {
+            $access = 'System'
+          }
+          else
+          {
+            $access = 'User'
+          }
+          
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Scheduled Task' -Classification 'MITRE ATT&CK T1053.005' -Path $propPath -Value $path -AccessGained $access -Note "Scheduled tasks run executables or actions when certain conditions, such as user log in or machine boot up, are met." -Reference 'https://attack.mitre.org/techniques/T1053/005/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        } 
+      }
+      Write-Verbose -Message ''
+    }
+    
     Write-Verbose -Message "$hostname - Starting execution..."
 
     if($PersistenceMethod -eq 'All')
@@ -1540,12 +1714,18 @@ function Find-AllPersistence
       Get-WMIEventsSubscrition
       Get-TSInitialProgram
       Get-AccessibilityTools
+      Get-AMSIProviders
+      Get-PowershellProfiles
+      Get-SilentExitMonitor
+      Get-TelemetryController
+      Get-RDPWDSStartupPrograms
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
         Write-Verbose -Message "$hostname - You have used the -IncludeHighFalsePositivesChecks switch, this may generate a lot of false positives since it includes checks with results which are difficult to filter programmatically..."
         Get-AppPaths
         Get-WindowsServices
+        Get-ScheduledTasks
       }
     }
     
@@ -1718,6 +1898,36 @@ function Find-AllPersistence
           Get-AccessibilityTools
           break
         }
+        'AMSIProviders'
+        {
+          Get-AMSIProviders
+          break
+        }
+        'PowershellProfiles'
+        {
+          Get-PowershellProfiles
+          break
+        }
+        'SilentExitMonitor'
+        {
+          Get-SilentExitMonitor
+          break
+        }
+        'TelemetryController'
+        {
+          Get-TelemetryController
+          break
+        }
+        'RDPWDSStartupPrograms'
+        {
+          Get-RDPWDSStartupPrograms
+          break
+        }
+        'ScheduledTasks'
+        {
+          Get-ScheduledTasks
+          break
+        }
       }
     }
 
@@ -1768,10 +1978,10 @@ function Find-AllPersistence
   Write-Verbose -Message 'Script execution finished.'  
 }
 # SIG # Begin signature block
-# MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIVkwYJKoZIhvcNAQcCoIIVhDCCFYACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVl14JprPjDp3TewgXl5vF2dF
-# ZgGgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhi0z5UX0XXblSiC5u3EFvrAr
+# QrKgghH0MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -1832,56 +2042,56 @@ function Find-AllPersistence
 # oIJB0kak6pSzEu4I64U6gZs7tS/dGNSljf2OSSnRr7KWzq03zl8l75jy+hOds9TW
 # SenLbjBQUGR96cFr6lEUfAIEHVC1L68Y1GGxx4/eRI82ut83axHMViw1+sVpbPxg
 # 51Tbnio1lB93079WPFnYaOvfGAA0e0zcfF/M9gXr+korwQTh2Prqooq2bYNMvUoU
-# KD85gnJ+t0smrWrb8dee2CvYZXD5laGtaAxOfy/VKNmwuWuAh9kcMIIGYDCCBMig
-# AwIBAgIRANqGcyslm0jf1LAmu7gf13AwDQYJKoZIhvcNAQEMBQAwVDELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGln
-# byBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNjAeFw0yMjA4MzAwMDAwMDBaFw0y
-# NTA4MjkyMzU5NTlaMFQxCzAJBgNVBAYTAklUMQ0wCwYDVQQIDARSb21hMRowGAYD
-# VQQKDBFGZWRlcmljbyBMYWdyYXN0YTEaMBgGA1UEAwwRRmVkZXJpY28gTGFncmFz
-# dGEwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCWUdcGbyUbCFFFZ6Mj
-# e/e1M0dGv9oWUKwB6O1XNQGLG5wMpsiJZRc1w6uV9iYsqIb2K5MyrbL7YNhMMgSv
-# JGM51OCphdX4MN2JKyG8oZs0CGnMfKckJfNw0rukD513VlL9s34Y1A+4xyfdgJ8q
-# pKz455vUM5PA3emF6ydRwdAa7vPRATqKqa/E6jUABluW0juMsMwNLucJeudD4lvL
-# INY8WBxdb7U6a9XmMqW67DdrrE93nenuDF1VYL3R4s0c9bYXvnLF45im/NjMnK+F
-# MJZfZq1OuE7DsTKNQ2KLru5i5luZAYnrFEP9U2oGZI1G149beOuzGBVju5TS5yqr
-# L9uVOaoRxvHpFUuZXE9Wxn7eNTAuA1NBfSqvwlJuL9xLStCR+Ep20euMihqKyROV
-# Jy/UbXbA9haB9D4xnGWPhdMbzh62og2taeCyUSR/ITznssDa8gj2Zz2dqdKI985M
-# BWlb+rIcnhTvfguBLo5aGvOcTepcxjcgs7WRq9AoL+tmXsFlHbnenmOXeyypfS1B
-# /L3WVND4sKU4RImFw1DHRUdUhtzv/OzXWn1MyTH/W1v0L8AMe/5YBmexHlcOaB05
-# xZJNxy3BQVXg/DEWAgIdZlatw7vrTPzROV4VPUkU1IPe/ZCJNe9Ij2ICa2kmb2I1
-# 8dVZ3m1o8T8P6Lq1rB/+d8yTMQIDAQABo4IBqzCCAacwHwYDVR0jBBgwFoAUDyrL
-# IIcouOxvSK4rVKYpqhekzQwwHQYDVR0OBBYEFD9Q0l33XgRE0bG3DGVYiX6xoX03
-# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBMGA1UdJQQMMAoGCCsGAQUF
-# BwMDMEoGA1UdIARDMEEwNQYMKwYBBAGyMQECAQMCMCUwIwYIKwYBBQUHAgEWF2h0
-# dHBzOi8vc2VjdGlnby5jb20vQ1BTMAgGBmeBDAEEATBJBgNVHR8EQjBAMD6gPKA6
-# hjhodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNDb2RlU2lnbmlu
-# Z0NBUjM2LmNybDB5BggrBgEFBQcBAQRtMGswRAYIKwYBBQUHMAKGOGh0dHA6Ly9j
-# cnQuc2VjdGlnby5jb20vU2VjdGlnb1B1YmxpY0NvZGVTaWduaW5nQ0FSMzYuY3J0
-# MCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5zZWN0aWdvLmNvbTAgBgNVHREEGTAX
-# gRVmZWQubGFnQHByb3Rvbm1haWwuY2gwDQYJKoZIhvcNAQEMBQADggGBAJj2JGru
-# B4OuFoVRe64Tj83gGZbenpMtVVzLsSXzqoYv9Xy/+DdgQpBCksbCM7lL+BXbjlrO
-# aRAhtshMcPXyKC0LyUK/97fmuZSEd0uJv+5bA+8J+syr/Bm7mfy+Wp0y3vN/rH0Y
-# 6OuUm8YVnEsh3dN5LkYBtht0E4uOMhaAY8FvQ+UqoVO64IEYGZvfeIQxpeoOFcZ6
-# LXNTEPwUsXT6aBwrdzXoTthdzYPG1OZscG5t1A+Q4FzjPgye0asKDEcL6nIiLsgn
-# KFwVxJoOvSg+xpj4urUbQ5K5STKvy6FeN05JjN00w91pauOXowy+sWKsA2tk0sEj
-# 7GyXN5xpdmmpS9syU0Piom/9stGkGJurdoUPNcCCagSQ6+6lDVDhxSnMroR75hIS
-# lYKhmhoGgn1vWQqUwx7CywDXxMGY7GT+ufXCssa6xZT+Nn+CIaHpb4EJyrNdKN/m
-# uFkQgQqZUeeV0/azIa5L9T1IaEn1xhe2ETNqZCHeGzmpmvifXW/N9+/HZDGCAwow
-# ggMGAgEBMGkwVDELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRl
-# ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
-# ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
-# oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGqUwqOMWgtKQaIXbYRE
-# 016pEr49MA0GCSqGSIb3DQEBAQUABIICAGSS+O2DTYi2yt2cLuDX+eKm1sJr8aqI
-# q4BUuSzDaMRUfSj8mEgh6FwWKTNryvSnVWRCoIorY1Ouc8aSvUtEsxSFDcr4EDCH
-# Q1IGHxIuXiyX7o9x+aErw89TnX80L8OQ9qrNtGNBQwIvpAKoiMqfX6BiYO63hNBo
-# 8iUpr4wRpZB2NCkgZuWRwN4lBRNaMUuIGJoCPffeM4eHk9NqOFB/Ied5t2Ww68Fp
-# ogdx9+ZcL6EFNmbiHVdLsi93NUGVB24i9Jtac3DvKgEff4FKn4DjPTlGPq2P8rXt
-# 8pjX8yrRnl1JA4UnkYNPnHDMjB3c4QjdyAoTB6dTjtky/1IgMPyW0YP7V91mrO2Q
-# xaDkCo9zKn2eD7Dd04wa/4H8otQFi53teFoadK6i+Cj4z5j3qIfzAtxGIgkixhAc
-# 5r+hIHL6LouBXuhuv4AIaGCBFaKfqPMqpGdlBR9+ukjxqsxoJApGQxe/+3dy9JQ3
-# bwAKHiWsYYp9PaPLIYZNX0DBr1dSZADAl/rJkqTz8BVzHnfU9IgCYaEDubEnxZrC
-# USftzTLw4QWYR+3o7x1tf32ZGr8+5En2weBDaoviDChTzvj3bb+j5TKBp3xz/sX0
-# 95KBYmqdSQlFpvwtc6Cjp7mwumV2fV7cnGA7Kvet1kLoZ0BPUkeYvB+L8kOF1AmG
-# TuAlQMas1/uy
+# KD85gnJ+t0smrWrb8dee2CvYZXD5laGtaAxOfy/VKNmwuWuAh9kcMIIGXzCCBMeg
+# AwIBAgIQUcDbMQiubrJYsDZABW3UATANBgkqhkiG9w0BAQwFADBUMQswCQYDVQQG
+# EwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSswKQYDVQQDEyJTZWN0aWdv
+# IFB1YmxpYyBDb2RlIFNpZ25pbmcgQ0EgUjM2MB4XDTIyMDgxNTAwMDAwMFoXDTI1
+# MDgxNDIzNTk1OVowVDELMAkGA1UEBhMCSVQxDTALBgNVBAgMBFJvbWExGjAYBgNV
+# BAoMEUZlZGVyaWNvIExhZ3Jhc3RhMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0
+# YTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAPq7+7B1CjWSZJs8lRnY
+# BLBdC2DkmFrDGB8zGAWKdFPh/PqgXjHv1qgkTd+YYNQ1cmSQ/wZULtMyS6bta/Rp
+# /OAh4kxQY2R+4UhIupy70uPkRBIUNCyerV0XE/npP0GdNksjmEvb4dCouYDFhy/5
+# M4psO5A/SDMv9e5IP4FDA0jRkuhSw2e0/aTcPmjJmkZPrKaRMEag2YVhWMPR20iX
+# cATmOZv/akPso6eRW/mxS0+UpR57rAxXhXJRC9foBWYXaIDa0iWOadzH+9ukeNn/
+# 4AIeERc69Fn5nlYgarboD72lBgwtwF3Xq40oiWrP3ObTbwUF9vv/4JS7q0nnuqvJ
+# Hsf1snoMUbG3JOmjyNzCB6Ktw6SvZPyQ/bcKpTryW99GEXib14DMzAt1l5xIPuEO
+# kvrMp1U94uoWbh7ij74cHG75vVAmSq/0MTDEo9c1F//fUI2uDpSNc9KzJkdE2XnN
+# HqNPCSRfrWvnmESVoW4+ecUVBoZ0xCNUwLjfI7Y9m86dDUUhOK0JDzXrqfHO00uu
+# CrW0byzYic2bb6k/vNMv93sttJErSScKjBH/ZJyQySAwz7h3FkH8vyTC9diibu2h
+# sLiBKOC6+mff53FWfgCMTc4e4s0Z+fdpNC80IvMSSbNEnkiyEcpiD23Z0Ny7Gnd0
+# IhDI7fKeJSjrFtkUNBElJMzNAgMBAAGjggGrMIIBpzAfBgNVHSMEGDAWgBQPKssg
+# hyi47G9IritUpimqF6TNDDAdBgNVHQ4EFgQUjK+D/PvF6iUYa+lkE59Z6KyTj24w
+# DgYDVR0PAQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwEwYDVR0lBAwwCgYIKwYBBQUH
+# AwMwSgYDVR0gBEMwQTA1BgwrBgEEAbIxAQIBAwIwJTAjBggrBgEFBQcCARYXaHR0
+# cHM6Ly9zZWN0aWdvLmNvbS9DUFMwCAYGZ4EMAQQBMEkGA1UdHwRCMEAwPqA8oDqG
+# OGh0dHA6Ly9jcmwuc2VjdGlnby5jb20vU2VjdGlnb1B1YmxpY0NvZGVTaWduaW5n
+# Q0FSMzYuY3JsMHkGCCsGAQUFBwEBBG0wazBEBggrBgEFBQcwAoY4aHR0cDovL2Ny
+# dC5zZWN0aWdvLmNvbS9TZWN0aWdvUHVibGljQ29kZVNpZ25pbmdDQVIzNi5jcnQw
+# IwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMCAGA1UdEQQZMBeB
+# FWZlZC5sYWdAcHJvdG9ubWFpbC5jaDANBgkqhkiG9w0BAQwFAAOCAYEAA5yOz1Rg
+# cV89wbdWSM29po3EDeX6IIS2BTA7UAbZ+PtMHbGTQzgUs23e0U5/jbmaYqty7vaX
+# v2SMNM/V7OL3mCpPBvVwPB5l8WKi4pTQLYPb8dFem5/oiV9BTiKjap6j5UKaoOW2
+# VS5izOKUZZxDSOhGGnjcKTFezaS2SnCZzb8tra/WbTszbI6Zt7tqEmfAcI3mlUJ9
+# hwoJvR8ZI+jhORhoyaaBzBk6dKCWjxQbAbKiWnFjUoC24ZRSKf6KhWaRxk767FUp
+# 91o1TQbI5OAKlMfGKxRVCFUl+1g9C7CA2asjVMDckqQMzrq63f6sxKtnef4PPek2
+# 2vTTQsQ7zxyQJlVz94u8Tv+nXKV5oYFnY/bvkFJok/1RJW3Ou18y1PlkhU9mKPDP
+# Ot+3Lelrm9hrAHVxwtILpSXyj5vuE8RJkVKmAg0e7rOiAOtmlAOsVUID0KtI9Szb
+# eGdASl5HfEhABRwNE3MWkHm4ho5p9h/vB9WoSYaqR/TIF0oxc8JhMP8AMYIDCTCC
+# AwUCAQEwaDBUMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVk
+# MSswKQYDVQQDEyJTZWN0aWdvIFB1YmxpYyBDb2RlIFNpZ25pbmcgQ0EgUjM2AhBR
+# wNsxCK5usliwNkAFbdQBMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
+# gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
+# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ1RyHvpA2QXm1l5uXkGlrN
+# Wlx7wzANBgkqhkiG9w0BAQEFAASCAgBIBpZFB1ASPrGoH0d0qhSwsJSHUUl3NDZz
+# TAcrbSpj0/mS9yfONZks6AKVe2P91rSG2QtzJRuTWONDa39sX4CCBTBeFcYizgUP
+# nJ7vKOh0OfBu8gik3gtkqZTlj48zE7mdfBjI3B1p/+iv/QJRdgGUbD+u7riIFRQ6
+# FUOfjxueX/X5kOrJdbvTPfQNk/ydBWGOxBySmicLZhLALz5B12Znl6Z4HykMSnuD
+# TxAP4QkpuneVldOgvUVkS83rJpDqj7ZgCVyUb5XLYdseQus5Iinr38UeBQTkefsa
+# EVWo52c611wgngqm3YnumJDC7UTWIrExDkRN+GxmeBebX6W5IorZfcRo+yje55vq
+# uMc1WqNRBkIojRq8As8g0NQytQFG1AW5AZcMrH6F4UHFCGj1YjnWZlWzXNet2aG0
+# C4ckNSSudELVbsKoo79LcIOFFaWUxOF60H3I/p5uIYMdoCCkoFxTqLgWh5dLsd55
+# Ye84/YpWHTL4o6tIC/xDidVEJZbYtHfJlZz7ZGN2Hk/UyJV24DR22+gmwAovZVYe
+# ctbfnkar2Y4nQCIH0kyqOLYnbKnzaFCtHuJWWPXZ6m6BGrjeO2OGxgmR6r4XixTf
+# eYGGp2CftI/PGtm46VjgYgPRtxXGfxcAYyHMAAjmyBkHjXQpaw0q8m/dJQbtTlFu
+# rAogW+PHqw==
 # SIG # End signature block
