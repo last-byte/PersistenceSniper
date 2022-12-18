@@ -1695,7 +1695,7 @@ function Find-AllPersistence
 			$propPath = Convert-Path -Path $screenSaverProgram.PSPath
 			$propPath = $propPath + "SCRNSAVE.EXE"
 
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Screensaver Suspisious Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Persistance with screensaver" -Reference 'https://attack.mitre.org/techniques/T1546/002/'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Screensaver Suspisious Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Persistence via screensaver" -Reference 'https://attack.mitre.org/techniques/T1546/002/'
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
