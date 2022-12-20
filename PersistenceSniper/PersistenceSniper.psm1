@@ -1,4 +1,4 @@
-﻿<#PSScriptInfo
+<#PSScriptInfo
 
     .VERSION 1.8.0
 
@@ -1678,6 +1678,33 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+
+    function Get-BitsJobs
+    {
+      Write-Verbose -Message "$hostname - Getting BITS Jobs"
+      $jobs =  Get-BitsTransfer -AllUsers | Where-Object {$_.JobState -eq "Error" } | Where-Object {$_.NotifyCmdLine.Length -gt 0}
+      if($jobs)
+      {
+        foreach($job in $jobs)
+        {
+          $propPath += $job.JobId
+          $path = $job.NotifyCmdLine
+          if($job.OwnerAccount -eq 'NT AUTHORITY\SYSTEM')
+          {
+            $access = 'System'
+          }
+          else
+          {
+            $access = 'User'
+          }
+          
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'BITS Job NotifyCmdLine' -Classification 'MITRE ATT&CK T1197.003' -Path $propPath -Value $path -AccessGained $access -Note "Windows Background Intelligent Transfer Service (BITS) can be used to persistently execute code by creating long-standing jobs. Here we list jobs with an Error job state and NotifyCmdLine values, where the command line value is executed each time the BITS transfer is retried." -Reference 'https://attack.mitre.org/techniques/T1197/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        } 
+      }
+      Write-Verbose -Message ''
+    }
     
     Write-Verbose -Message "$hostname - Starting execution..."
 
@@ -1719,6 +1746,7 @@ function Find-AllPersistence
       Get-SilentExitMonitor
       Get-TelemetryController
       Get-RDPWDSStartupPrograms
+      Get-BitsJobs
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -1926,6 +1954,10 @@ function Find-AllPersistence
         'ScheduledTasks'
         {
           Get-ScheduledTasks
+          break
+        }
+        'BitsJobs'{
+          Get-BitsJobs
           break
         }
       }
