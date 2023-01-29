@@ -1,5 +1,3 @@
-[![language](https://img.shields.io/github/languages/top/last-byte/PersistenceSniper?label=Powershell)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![platform badge](https://img.shields.io/powershellgallery/p/PersistenceSniper?color=informational&label=Platform)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![version](https://img.shields.io/powershellgallery/v/PersistenceSniper?label=PS%20Gallery%20Version)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![downloads](https://img.shields.io/powershellgallery/dt/PersistenceSniper?label=Downloads)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![workflow](https://img.shields.io/github/workflow/status/last-byte/PersistenceSniper/CI?label=Github%20CI)](https://www.powershellgallery.com/packages/PersistenceSniper/) [![license](https://img.shields.io/github/license/last-byte/PersistenceSniper?color=bright%20green&label=License)](https://creativecommons.org/publicdomain/zero/1.0/)
-
 <table class="tg">
 <thead>
   <tr>
@@ -10,7 +8,9 @@
   <tr>
     <td class="tg-0pky"><p align="center">
 <img src="https://blog.notso.pro/img/persistencesniper2.png" width="60%">
-</p><p>PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a>.</p></td>
+<p align="center"><a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/github/languages/top/last-byte/PersistenceSniper?label=Powershell" alt="language" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/p/PersistenceSniper?color=informational&amp;label=Platform" alt="platform badge" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/v/PersistenceSniper?label=Gallery%20Version" alt="version" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/dt/PersistenceSniper?label=Gallery%20Downloads" alt="gallery downloads" style="text-align:center;display:block;"></a> <a href="https://github.com/last-byte/PersistenceSniper/releases"><img src="https://img.shields.io/github/downloads/last-byte/PersistenceSniper/total?label=Releases%20Downloads" alt="releases downloads" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/github/actions/workflow/status/last-byte/PersistenceSniper/main.yml?branch=main&label=Github%20CI" alt="workflow" style="text-align:center;display:block;"></a> <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/github/license/last-byte/PersistenceSniper?color=bright%20green&amp;label=License" alt="license" style="text-align:center;display:block;"></a> <a href="https://twitter.com/last0x00"><img src="https://img.shields.io/twitter/follow/last0x00?style=social" alt="twitter" style="text-align:center;display:block;"></a> <a href="https://twitter.com/dottor_morte"><img src="https://img.shields.io/twitter/follow/dottor_morte?style=social" alt="twitter_rick" style="text-align:center;display:block;"></a></p> 
+<p align="center">PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a>. The tool is under active development with new releases coming out by the week, so make sure to use the up-to-date version.</p>
+</td>
   </tr>
 </tbody>
 </table>
@@ -37,6 +37,13 @@ If you need a detailed explanation of how to use the tool or which parameters ar
 ```  
 Get-Help -Name Find-AllPersistence -Full
 ```
+
+If you only want to check for a single persistence technique, you can rely on `Find-AllPersistence`'s `PersistenceMethod` parameter. Say, for example, you only want to check for persistences implanted through the Run and RunOnce registry keys:
+```
+PS C:\> Find-AllPersistence -PersistenceMethod RunAndRunOnce
+```
+The `PersistenceMethod` parameter uses Powershell's `ValidateSet` directive, so you can tab through it instead of writing down the persistence method of choice.
+![](https://blog.notso.pro/img/pssnipervalidateset.gif)
 
 PersistenceSniper's `Find-AllPersistence` returns an array of objects of type PSCustomObject with the following properties:
 ```
@@ -102,7 +109,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 One cool way to use PersistenceSniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
 
 ## Persistence techniques implemented so far
-The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following __32 techniques__ have been implemented successfully:
+The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following __40 techniques__ have been implemented successfully:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
@@ -135,6 +142,15 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [ErrorHandler.cmd Hijacking](https://www.hexacorn.com/blog/2022/01/16/beyond-good-ol-run-key-part-135/) 
 - [x] [WMI Subscriptions](https://attack.mitre.org/techniques/T1546/003/) 
 - [x] [Windows Services](https://attack.mitre.org/techniques/T1543/003/)
+- [x] [Terminal Services InitialProgram](https://persistence-info.github.io/Data/tsinitialprogram.html)
+- [x] [Accessibility Tools Backdoor](https://attack.mitre.org/techniques/T1546/008/)
+- [x] [AMSI Providers](https://b4rtik.github.io/posts/antimalware-scan-interface-provider-for-persistence/)
+- [x] [Powershell Profiles](https://attack.mitre.org/techniques/T1546/013/)
+- [x] [Silent Exit Monitor](https://attack.mitre.org/techniques/T1546/012/)
+- [x] [Telemetry Controller](https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence/)
+- [x] [RDP WDS Startup Programs](https://persistence-info.github.io/Data/rdpwdstartupprograms.html)
+- [x] [Scheduled Tasks](https://attack.mitre.org/techniques/T1053/005/)
+- [x] [Screensaver](https://attack.mitre.org/techniques/T1546/002/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
