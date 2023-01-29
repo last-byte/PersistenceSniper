@@ -1711,19 +1711,20 @@ function Find-AllPersistence
     function Get-Screensaver
     {
       Write-Verbose -Message "$hostname - Getting Screensaver programs"
-      foreach($sid in $systemAndUsersHives) {
-          $legitimateProgram = "C:\Windows\system32\Mystify.scr", "C:\Windows\system32\Ribbons.scr", "C:\Windows\system32\Bubbles.scr", "C:\Windows\system32\ssText3d.scr", "C:\Windows\system32\scrnsave.scr", "C:\Windows\system32\PhotoScreensaver.scr"
-		  $screenSaverProgram = (Get-ItemProperty -ErrorAction SilentlyContinue -Path "$sid\Control Panel\Desktop\" -Name "SCRNSAVE.exe")
-		  if(($screenSaverProgram) -and ($screenSaverProgram."SCRNSAVE.EXE" -ne ""))
+      foreach($sid in $systemAndUsersHives) 
+      {
+          $legitimatePrograms = "C:\Windows\system32\Mystify.scr", "C:\Windows\system32\Ribbons.scr", "C:\Windows\system32\Bubbles.scr", "C:\Windows\system32\ssText3d.scr", "C:\Windows\system32\scrnsave.scr", "C:\Windows\system32\PhotoScreensaver.scr"
+        $screenSaverProgram = (Get-ItemProperty -ErrorAction SilentlyContinue -Path "$sid\Control Panel\Desktop\" -Name "SCRNSAVE.exe")
+        if(($screenSaverProgram) -and ($screenSaverProgram."SCRNSAVE.EXE" -ne ""))
           {
             $executable = $screenSaverProgram."SCRNSAVE.EXE"
-            if ($legitimateProgram.Contains($Executable)) {
-				continue
-			}
-			$propPath = Convert-Path -Path $screenSaverProgram.PSPath
-			$propPath = $propPath + "SCRNSAVE.EXE"
+            if ($legitimatePrograms.Contains($Executable)) {
+            continue
+          }
+          $propPath = Convert-Path -Path $screenSaverProgram.PSPath
+          $propPath = $propPath + "SCRNSAVE.EXE"
 
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Screensaver Suspisious Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Persistence via screensaver" -Reference 'https://attack.mitre.org/techniques/T1546/002/'
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Suspicious Screensaver Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Executables specified under the SCRNSAVE.EXE property of the HKEY_USERS\<SID>\Control Panel\Desktop key will be run in place of the legitimate screensaver, thus achieving persistence on a compromised machine. " -Reference 'https://attack.mitre.org/techniques/T1546/002/'
             $null = $persistenceObjectArray.Add($PersistenceObject)
             $PersistenceObject
           }
@@ -2048,8 +2049,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURZhwdOrJPqVHWJH4Kx2q1uB3
-# yH2gghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMDCZDXoJK5YwaUD3KY5kTs2r
+# y5WgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2149,17 +2150,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFDB273iAVqgHKnQHFoTo
-# z2KSS1jIMA0GCSqGSIb3DQEBAQUABIICAGdO2louN5jlLe+wfvOKn9c72qS70sCf
-# vZBAWJ12atw9g6ExExxLdXwhDY/leMB09J+fsuMZuOl8pYrKjK5FVXIejUK/bc5y
-# /ksaGK0FNybqJgkFttrf7VmOzk4Qfgi6aq5afzMNX6CISCtGoFnWYi9PBU2VcD6g
-# dM7zd9Ytyw5QAP475GcYj/ZQaHSQa9ZB8bDoGAVVG4aS/692LdGITO4T59ZRFUhG
-# dpcW0lTDayVMewgrQnJ3XvV4H5PFbaPT5qaCVMC0CvC6DSYcxUUlPqeVl5+2LE2g
-# 6DUcuRhuhpQorgv7Riv4spn0KGceB8uBFjIFsHsJvRbSPws815wV58KK5pIEd3X3
-# 7wxv1rkR6KIF1mtTA66G2xzTebBq88hFyWLpjpga/+CMTX1gD4mhAUJmmF7/qUbU
-# mritPUgmG4Kc8jb4WkbGchxml1HVsyCly5CuP7h0m1XnJic9Hr0XjmUmqu39FtIH
-# +DD4bTyKN7Tj7Ddeh+N0Kb+5KfFRK/T9l2DEfqQOAKY2tQJ2NFnSrpLZ6jG3R2F7
-# gwYoYk/7dSd41LobPOhFNOEtU0WfxUz5gNLt5KJUcJYk6YRS5uGho5obic+96/c+
-# 8p07cHcLXcNLHlum0VqSHF+PwQePU21Y541P0Ce3cy7TQNzJ+gXpJbEmZ7xiUu0e
-# cX+NMsS+kE8n
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFHWk/tSW3YJg4RoW/snt
+# y3S73rNNMA0GCSqGSIb3DQEBAQUABIICACKvb9S7Zaj3OMGjbCtcXTq3/9o4DyNi
+# xYNs3/ducXmpM/6nD5VXS6o2vTweg5vaCizCMQmRbueLkGhYObqNsP31HRPaNsFc
+# xzAOcwhUhIuCbqpZl1kgJQ66FInfLajPX1R/AAmlhweyAqGCmlbGueQ2qv3RAiwY
+# /0g8GkJo7S/m1xX3XwpAZCfK2YZI++XwGxwD0uNBvwQqTXldXENNMUyhjfv5A/Iz
+# LA1zK9jgfbG6T4tqygw/RnWcAd1RjKiAXxLh5a4kVLeHboY1uezUcudr6jbafEwN
+# K+tKo74+N+IO0oeLufoW0rn8B3oyYTurt3tKIl5vIqaDYxF5Z04+5hInVD/TWe1u
+# zyO50SAVidCV75i1++wAdY6tWF3za/0jUC43LbzMmwfR+IkLwcqRx6rXBFGlKF6Q
+# xjwNUFWU4mEGZQw1dyVZWW2uBsigqRhFQmC7ZWgiIsy12WEkFWBA2kStKy2X63T2
+# gr7TzaSwtNG10/bY+/ENL5EarCDf9bJkMaQjyJtFj6v67bJsza+20tt8JjKKCKLs
+# Zi0wMs7aKBaU9Wtjr8Vp0k9gZLhkImL/PWcOeRJ6bTx5L+szn1EFou1wNwa2S+pQ
+# nhfKQn++3pIC/h9PbtOsDc7j7/Eh7vpF6s6b0BSXCJqTkmv9F2nH205ShAogPfc+
+# phhS3lOUsS/a
 # SIG # End signature block
