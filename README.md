@@ -150,6 +150,8 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [Telemetry Controller](https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence/)
 - [x] [RDP WDS Startup Programs](https://persistence-info.github.io/Data/rdpwdstartupprograms.html)
 - [x] [Scheduled Tasks](https://attack.mitre.org/techniques/T1053/005/)
+- [x] [BITS Jobs NotifyCmdLine](https://attack.mitre.org/techniques/T1197/)
+- [x] [Power Automate](https://github.com/mbrg/defcon30/tree/main/No_Code_Malware)
 - [x] [Screensaver](https://attack.mitre.org/techniques/T1546/002/)
 
 ## Credits
@@ -158,7 +160,14 @@ The techniques implemented in this script have already been published by skilled
 - [Grzegorz Tworek](https://twitter.com/0gtweet/) and his amazing [persistence-info.github.io website](https://persistence-info.github.io/);
 - All the other researchers who disclosed cool and unknown persistence techniques.
 
-I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/), in particular [Riccardo Ancarani](https://twitter.com/dottor_morte), for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell tool.
+Furthermore, these people contributed to the project:
+- [Riccardo Ancarani](https://twitter.com/dottor_morte)
+- [Cecio](https://twitter.com/red5heep)
+- [Vadim](https://twitter.com/D3F7A5105)
+- [fkadibs](https://twitter.com/fkadibs)
+
+
+I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/) for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell module.
 
 ## License
 This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license. TL;DR: you can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission.

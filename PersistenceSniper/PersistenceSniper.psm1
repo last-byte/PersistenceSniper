@@ -1420,7 +1420,7 @@ function Find-AllPersistence
 
       if ($LastPALog)
       {
-        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Power Automate' -Classification 'Uncatalogued Technique N.8' -Path $PADFolder -Value $LastPALog -AccessGained 'System/User' -Note "'Power Automate' is an RPA (Robotic Process Automation) made available by Microsoft. It can runs on standalone system or through Azure Tenants. Given the high number of functions available and the 'legit source' of these executables and processes, it could be used for malicious intent as well. The presence of the logs means that the system is in some way running these flows. Review if they are legit or not (last log is shown in Value)." -Reference 'https://github.com/mbrg/defcon30/tree/main/No_Code_Malware'
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Power Automate' -Classification 'Uncatalogued Technique N.12' -Path $PADFolder -Value $LastPALog -AccessGained 'System/User' -Note "'Power Automate' is an RPA (Robotic Process Automation) made available by Microsoft. It can runs on standalone system or through Azure Tenants. Given the high number of functions available and the 'legit source' of these executables and processes, it could be used for malicious intent as well. The presence of the logs means that the system is in some way running these flows. Review if they are legit or not (last log is shown in Value)." -Reference 'https://github.com/mbrg/defcon30/tree/main/No_Code_Malware'
         $null = $persistenceObjectArray.Add($PersistenceObject)
         $PersistenceObject
       }
@@ -2072,8 +2072,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMDCZDXoJK5YwaUD3KY5kTs2r
-# y5WgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzcvSjud8Ydf5gmNd2n2OpExz
+# 0tOgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2173,17 +2173,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFHWk/tSW3YJg4RoW/snt
-# y3S73rNNMA0GCSqGSIb3DQEBAQUABIICACKvb9S7Zaj3OMGjbCtcXTq3/9o4DyNi
-# xYNs3/ducXmpM/6nD5VXS6o2vTweg5vaCizCMQmRbueLkGhYObqNsP31HRPaNsFc
-# xzAOcwhUhIuCbqpZl1kgJQ66FInfLajPX1R/AAmlhweyAqGCmlbGueQ2qv3RAiwY
-# /0g8GkJo7S/m1xX3XwpAZCfK2YZI++XwGxwD0uNBvwQqTXldXENNMUyhjfv5A/Iz
-# LA1zK9jgfbG6T4tqygw/RnWcAd1RjKiAXxLh5a4kVLeHboY1uezUcudr6jbafEwN
-# K+tKo74+N+IO0oeLufoW0rn8B3oyYTurt3tKIl5vIqaDYxF5Z04+5hInVD/TWe1u
-# zyO50SAVidCV75i1++wAdY6tWF3za/0jUC43LbzMmwfR+IkLwcqRx6rXBFGlKF6Q
-# xjwNUFWU4mEGZQw1dyVZWW2uBsigqRhFQmC7ZWgiIsy12WEkFWBA2kStKy2X63T2
-# gr7TzaSwtNG10/bY+/ENL5EarCDf9bJkMaQjyJtFj6v67bJsza+20tt8JjKKCKLs
-# Zi0wMs7aKBaU9Wtjr8Vp0k9gZLhkImL/PWcOeRJ6bTx5L+szn1EFou1wNwa2S+pQ
-# nhfKQn++3pIC/h9PbtOsDc7j7/Eh7vpF6s6b0BSXCJqTkmv9F2nH205ShAogPfc+
-# phhS3lOUsS/a
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGLr+28+g6I9WnkInkgo
+# JteAj2DAMA0GCSqGSIb3DQEBAQUABIICAH76T982f+OYyQEy2HpbrlUIY2zozovN
+# zaZdM6PjLD3KnHbQLJRXx9eyexKv36QIMBdZJhRyncMRUvhOMQaF3X6pfIIRV5l2
+# 8BkEjvF1V1DlhFllOMBFUsdlC8Gs9CO3eW44i31LWTgHWOHphnDZfm57C3KAcve9
+# LlhNJaeR03qPYQ5FCNfaNAq4nxB+GaoE/SpfLrBaMgt4WWNwDKeBTUeC28MH3lC+
+# xG2Wu5fX0NnYcRqdV/ovZisk6SGjSvD71tsQ8dJgE1vZnKCAS4wsDVDLf85L0iR5
+# xKhb2JfSxZda6JysDcCaBBCd+qKqjIq5jdc2KKNQ3EdH2k1rSnHhyh0xYNwPQNkI
+# Sj3IVUAEgx/9VMktcTxVIXQIP0t57Po1Vq89m+FHq2ZVsUYQ6wFncV+IQgs8UHNN
+# vPE9DXWips5/Q2nLck36LBAicU9qO6+riKswsmmly39zx5nL6D/xg4c/xt6LB98h
+# M+s1Cia1TufkkIa1NX3VYgyC4b7BcM/nfd/RbfCekttLz52j1OVwXzMxjgx/ABqy
+# v6pm/mi8mFu2NkPTVlEnL7ZMFCOefh0G+EQfXLy0qjta5hLpp9YOCaV8FJZfLLpM
+# 6Rjgg2wJzRdNvKiAQEkzlO8VxMczm1Q/kKgew7DmyHk9iAYK996szXRfFb4473fR
+# U0Gxc/FLpcN1
 # SIG # End signature block
