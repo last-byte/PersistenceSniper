@@ -1,14 +1,21 @@
 # Changelog
 
+## 1.9.0
+Features:
+   - Added the following persistence techniques:
+	  - Screensaver
+	  - BITS JOb NotifyCmdLine
+	  - Power Automate
+
 ## 1.8.0
 Features:
    - Added the following persistence techniques:
-	- AMSI Providers
-	- Powershell Profiles 
-	- Silent Exit Monitor
-	- Telemetry Controller Commands
-	- RDP WDS Startup Programs
-	- Scheduled Tasks
+	  - AMSI Providers
+	  - Powershell Profiles 
+	  - Silent Exit Monitor
+	  - Telemetry Controller Commands
+	  - RDP WDS Startup Programs
+	  - Scheduled Tasks
 Fixes:
    - Fixed minor typos here and there
 	

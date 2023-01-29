@@ -1,6 +1,6 @@
-﻿<#PSScriptInfo
+<#PSScriptInfo
 
-    .VERSION 1.8.0
+    .VERSION 1.9.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -138,7 +138,10 @@ function Find-AllPersistence
         'SilentExitMonitor',
         'TelemetryController',
         'RDPWDSStartupPrograms',
-        'ScheduledTasks'
+        'ScheduledTasks',
+        'BitsJobsNotify',
+        'Screensaver',
+        'PowerAutomate'
     )]
     $PersistenceMethod = 'All',
      
@@ -1408,6 +1411,23 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
     
+    function Get-PowerAutomate
+    {
+      Write-Verbose -Message "$hostname - Checking Power Automate presence..."
+
+      $PADFolder = "$env:ProgramData\Microsoft\Power Automate\Logs"
+      $LastPALog = Get-ChildItem -Path $PADFolder | Sort-Object LastWriteTime -Descending| Select-Object -First 1
+
+      if ($LastPALog)
+      {
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Power Automate' -Classification 'Uncatalogued Technique N.12' -Path $PADFolder -Value $LastPALog -AccessGained 'System/User' -Note "'Power Automate' is an RPA (Robotic Process Automation) made available by Microsoft. It can runs on standalone system or through Azure Tenants. Given the high number of functions available and the 'legit source' of these executables and processes, it could be used for malicious intent as well. The presence of the logs means that the system is in some way running these flows. Review if they are legit or not (last log is shown in Value)." -Reference 'https://github.com/mbrg/defcon30/tree/main/No_Code_Malware'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+      
+      Write-Verbose -Message '' 
+    }
+
     function Get-TSInitialProgram
     {
       Write-Verbose -Message "$hostname - Getting Terminal Services InitialProgram properties..."
@@ -1678,7 +1698,58 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+
+    function Get-BitsJobsNotifyCmdLine
+    {
+      Write-Verbose -Message "$hostname - Getting BITS Jobs"
+      $jobs =  Get-BitsTransfer -AllUsers | Where-Object {$_.JobState -eq "Error" } | Where-Object {$_.NotifyCmdLine.Length -gt 0}
+      if($jobs)
+      {
+        foreach($job in $jobs)
+        {
+          $propPath += $job.JobId
+          $path = $job.NotifyCmdLine
+          if($job.OwnerAccount -eq 'NT AUTHORITY\SYSTEM')
+          {
+            $access = 'System'
+          }
+          else
+          {
+            $access = 'User'
+          }
+          
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'BITS Job NotifyCmdLine' -Classification 'MITRE ATT&CK T1197.003' -Path $propPath -Value $path -AccessGained $access -Note "Windows Background Intelligent Transfer Service (BITS) can be used to persistently execute code by creating long-standing jobs. Specifically, if an attacker sets the SetNotifyCmdLine when creating a job which will error, the executable specified will be run everytime the BITS job fails." -Reference 'https://attack.mitre.org/techniques/T1197/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        } 
+      }
+      Write-Verbose -Message ''
+    }
     
+    function Get-Screensaver
+    {
+      Write-Verbose -Message "$hostname - Getting Screensaver programs"
+      foreach($sid in $systemAndUsersHives) 
+      {
+          $legitimatePrograms = "C:\Windows\system32\Mystify.scr", "C:\Windows\system32\Ribbons.scr", "C:\Windows\system32\Bubbles.scr", "C:\Windows\system32\ssText3d.scr", "C:\Windows\system32\scrnsave.scr", "C:\Windows\system32\PhotoScreensaver.scr"
+        $screenSaverProgram = (Get-ItemProperty -ErrorAction SilentlyContinue -Path "$sid\Control Panel\Desktop\" -Name "SCRNSAVE.exe")
+        if(($screenSaverProgram) -and ($screenSaverProgram."SCRNSAVE.EXE" -ne ""))
+          {
+            $executable = $screenSaverProgram."SCRNSAVE.EXE"
+            if ($legitimatePrograms.Contains($Executable)) {
+            continue
+          }
+          $propPath = Convert-Path -Path $screenSaverProgram.PSPath
+          $propPath = $propPath + "SCRNSAVE.EXE"
+
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Suspicious Screensaver Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Executables specified under the SCRNSAVE.EXE property of the HKEY_USERS\<SID>\Control Panel\Desktop key will be run in place of the legitimate screensaver, thus achieving persistence on a compromised machine. " -Reference 'https://attack.mitre.org/techniques/T1546/002/'
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+            $PersistenceObject
+          }
+      }
+      Write-Verbose -Message ''
+    }
+
     Write-Verbose -Message "$hostname - Starting execution..."
 
     if($PersistenceMethod -eq 'All')
@@ -1719,6 +1790,9 @@ function Find-AllPersistence
       Get-SilentExitMonitor
       Get-TelemetryController
       Get-RDPWDSStartupPrograms
+      Get-BitsJobsNotifyCmdLine
+      Get-Screensaver
+      Get-PowerAutomate
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -1928,6 +2002,23 @@ function Find-AllPersistence
           Get-ScheduledTasks
           break
         }
+
+        'Screensaver'
+        {
+          Get-Screensaver
+          break
+        }
+
+        'BitsJobsNotify'
+        {
+          Get-BitsJobsNotifyCmdLine
+          break
+        }
+        'PowerAutomate'
+        {
+          Get-PowerAutomate
+          break
+        }
       }
     }
 
@@ -1977,11 +2068,12 @@ function Find-AllPersistence
   
   Write-Verbose -Message 'Script execution finished.'  
 }
+
 # SIG # Begin signature block
-# MIIVkwYJKoZIhvcNAQcCoIIVhDCCFYACAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhi0z5UX0XXblSiC5u3EFvrAr
-# QrKgghH0MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzcvSjud8Ydf5gmNd2n2OpExz
+# 0tOgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2042,56 +2134,56 @@ function Find-AllPersistence
 # oIJB0kak6pSzEu4I64U6gZs7tS/dGNSljf2OSSnRr7KWzq03zl8l75jy+hOds9TW
 # SenLbjBQUGR96cFr6lEUfAIEHVC1L68Y1GGxx4/eRI82ut83axHMViw1+sVpbPxg
 # 51Tbnio1lB93079WPFnYaOvfGAA0e0zcfF/M9gXr+korwQTh2Prqooq2bYNMvUoU
-# KD85gnJ+t0smrWrb8dee2CvYZXD5laGtaAxOfy/VKNmwuWuAh9kcMIIGXzCCBMeg
-# AwIBAgIQUcDbMQiubrJYsDZABW3UATANBgkqhkiG9w0BAQwFADBUMQswCQYDVQQG
-# EwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSswKQYDVQQDEyJTZWN0aWdv
-# IFB1YmxpYyBDb2RlIFNpZ25pbmcgQ0EgUjM2MB4XDTIyMDgxNTAwMDAwMFoXDTI1
-# MDgxNDIzNTk1OVowVDELMAkGA1UEBhMCSVQxDTALBgNVBAgMBFJvbWExGjAYBgNV
-# BAoMEUZlZGVyaWNvIExhZ3Jhc3RhMRowGAYDVQQDDBFGZWRlcmljbyBMYWdyYXN0
-# YTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAPq7+7B1CjWSZJs8lRnY
-# BLBdC2DkmFrDGB8zGAWKdFPh/PqgXjHv1qgkTd+YYNQ1cmSQ/wZULtMyS6bta/Rp
-# /OAh4kxQY2R+4UhIupy70uPkRBIUNCyerV0XE/npP0GdNksjmEvb4dCouYDFhy/5
-# M4psO5A/SDMv9e5IP4FDA0jRkuhSw2e0/aTcPmjJmkZPrKaRMEag2YVhWMPR20iX
-# cATmOZv/akPso6eRW/mxS0+UpR57rAxXhXJRC9foBWYXaIDa0iWOadzH+9ukeNn/
-# 4AIeERc69Fn5nlYgarboD72lBgwtwF3Xq40oiWrP3ObTbwUF9vv/4JS7q0nnuqvJ
-# Hsf1snoMUbG3JOmjyNzCB6Ktw6SvZPyQ/bcKpTryW99GEXib14DMzAt1l5xIPuEO
-# kvrMp1U94uoWbh7ij74cHG75vVAmSq/0MTDEo9c1F//fUI2uDpSNc9KzJkdE2XnN
-# HqNPCSRfrWvnmESVoW4+ecUVBoZ0xCNUwLjfI7Y9m86dDUUhOK0JDzXrqfHO00uu
-# CrW0byzYic2bb6k/vNMv93sttJErSScKjBH/ZJyQySAwz7h3FkH8vyTC9diibu2h
-# sLiBKOC6+mff53FWfgCMTc4e4s0Z+fdpNC80IvMSSbNEnkiyEcpiD23Z0Ny7Gnd0
-# IhDI7fKeJSjrFtkUNBElJMzNAgMBAAGjggGrMIIBpzAfBgNVHSMEGDAWgBQPKssg
-# hyi47G9IritUpimqF6TNDDAdBgNVHQ4EFgQUjK+D/PvF6iUYa+lkE59Z6KyTj24w
-# DgYDVR0PAQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwEwYDVR0lBAwwCgYIKwYBBQUH
-# AwMwSgYDVR0gBEMwQTA1BgwrBgEEAbIxAQIBAwIwJTAjBggrBgEFBQcCARYXaHR0
-# cHM6Ly9zZWN0aWdvLmNvbS9DUFMwCAYGZ4EMAQQBMEkGA1UdHwRCMEAwPqA8oDqG
-# OGh0dHA6Ly9jcmwuc2VjdGlnby5jb20vU2VjdGlnb1B1YmxpY0NvZGVTaWduaW5n
-# Q0FSMzYuY3JsMHkGCCsGAQUFBwEBBG0wazBEBggrBgEFBQcwAoY4aHR0cDovL2Ny
-# dC5zZWN0aWdvLmNvbS9TZWN0aWdvUHVibGljQ29kZVNpZ25pbmdDQVIzNi5jcnQw
-# IwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMCAGA1UdEQQZMBeB
-# FWZlZC5sYWdAcHJvdG9ubWFpbC5jaDANBgkqhkiG9w0BAQwFAAOCAYEAA5yOz1Rg
-# cV89wbdWSM29po3EDeX6IIS2BTA7UAbZ+PtMHbGTQzgUs23e0U5/jbmaYqty7vaX
-# v2SMNM/V7OL3mCpPBvVwPB5l8WKi4pTQLYPb8dFem5/oiV9BTiKjap6j5UKaoOW2
-# VS5izOKUZZxDSOhGGnjcKTFezaS2SnCZzb8tra/WbTszbI6Zt7tqEmfAcI3mlUJ9
-# hwoJvR8ZI+jhORhoyaaBzBk6dKCWjxQbAbKiWnFjUoC24ZRSKf6KhWaRxk767FUp
-# 91o1TQbI5OAKlMfGKxRVCFUl+1g9C7CA2asjVMDckqQMzrq63f6sxKtnef4PPek2
-# 2vTTQsQ7zxyQJlVz94u8Tv+nXKV5oYFnY/bvkFJok/1RJW3Ou18y1PlkhU9mKPDP
-# Ot+3Lelrm9hrAHVxwtILpSXyj5vuE8RJkVKmAg0e7rOiAOtmlAOsVUID0KtI9Szb
-# eGdASl5HfEhABRwNE3MWkHm4ho5p9h/vB9WoSYaqR/TIF0oxc8JhMP8AMYIDCTCC
-# AwUCAQEwaDBUMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVk
-# MSswKQYDVQQDEyJTZWN0aWdvIFB1YmxpYyBDb2RlIFNpZ25pbmcgQ0EgUjM2AhBR
-# wNsxCK5usliwNkAFbdQBMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKAC
-# gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBQ1RyHvpA2QXm1l5uXkGlrN
-# Wlx7wzANBgkqhkiG9w0BAQEFAASCAgBIBpZFB1ASPrGoH0d0qhSwsJSHUUl3NDZz
-# TAcrbSpj0/mS9yfONZks6AKVe2P91rSG2QtzJRuTWONDa39sX4CCBTBeFcYizgUP
-# nJ7vKOh0OfBu8gik3gtkqZTlj48zE7mdfBjI3B1p/+iv/QJRdgGUbD+u7riIFRQ6
-# FUOfjxueX/X5kOrJdbvTPfQNk/ydBWGOxBySmicLZhLALz5B12Znl6Z4HykMSnuD
-# TxAP4QkpuneVldOgvUVkS83rJpDqj7ZgCVyUb5XLYdseQus5Iinr38UeBQTkefsa
-# EVWo52c611wgngqm3YnumJDC7UTWIrExDkRN+GxmeBebX6W5IorZfcRo+yje55vq
-# uMc1WqNRBkIojRq8As8g0NQytQFG1AW5AZcMrH6F4UHFCGj1YjnWZlWzXNet2aG0
-# C4ckNSSudELVbsKoo79LcIOFFaWUxOF60H3I/p5uIYMdoCCkoFxTqLgWh5dLsd55
-# Ye84/YpWHTL4o6tIC/xDidVEJZbYtHfJlZz7ZGN2Hk/UyJV24DR22+gmwAovZVYe
-# ctbfnkar2Y4nQCIH0kyqOLYnbKnzaFCtHuJWWPXZ6m6BGrjeO2OGxgmR6r4XixTf
-# eYGGp2CftI/PGtm46VjgYgPRtxXGfxcAYyHMAAjmyBkHjXQpaw0q8m/dJQbtTlFu
-# rAogW+PHqw==
+# KD85gnJ+t0smrWrb8dee2CvYZXD5laGtaAxOfy/VKNmwuWuAh9kcMIIGYDCCBMig
+# AwIBAgIRANqGcyslm0jf1LAmu7gf13AwDQYJKoZIhvcNAQEMBQAwVDELMAkGA1UE
+# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGln
+# byBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNjAeFw0yMjA4MzAwMDAwMDBaFw0y
+# NTA4MjkyMzU5NTlaMFQxCzAJBgNVBAYTAklUMQ0wCwYDVQQIDARSb21hMRowGAYD
+# VQQKDBFGZWRlcmljbyBMYWdyYXN0YTEaMBgGA1UEAwwRRmVkZXJpY28gTGFncmFz
+# dGEwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCWUdcGbyUbCFFFZ6Mj
+# e/e1M0dGv9oWUKwB6O1XNQGLG5wMpsiJZRc1w6uV9iYsqIb2K5MyrbL7YNhMMgSv
+# JGM51OCphdX4MN2JKyG8oZs0CGnMfKckJfNw0rukD513VlL9s34Y1A+4xyfdgJ8q
+# pKz455vUM5PA3emF6ydRwdAa7vPRATqKqa/E6jUABluW0juMsMwNLucJeudD4lvL
+# INY8WBxdb7U6a9XmMqW67DdrrE93nenuDF1VYL3R4s0c9bYXvnLF45im/NjMnK+F
+# MJZfZq1OuE7DsTKNQ2KLru5i5luZAYnrFEP9U2oGZI1G149beOuzGBVju5TS5yqr
+# L9uVOaoRxvHpFUuZXE9Wxn7eNTAuA1NBfSqvwlJuL9xLStCR+Ep20euMihqKyROV
+# Jy/UbXbA9haB9D4xnGWPhdMbzh62og2taeCyUSR/ITznssDa8gj2Zz2dqdKI985M
+# BWlb+rIcnhTvfguBLo5aGvOcTepcxjcgs7WRq9AoL+tmXsFlHbnenmOXeyypfS1B
+# /L3WVND4sKU4RImFw1DHRUdUhtzv/OzXWn1MyTH/W1v0L8AMe/5YBmexHlcOaB05
+# xZJNxy3BQVXg/DEWAgIdZlatw7vrTPzROV4VPUkU1IPe/ZCJNe9Ij2ICa2kmb2I1
+# 8dVZ3m1o8T8P6Lq1rB/+d8yTMQIDAQABo4IBqzCCAacwHwYDVR0jBBgwFoAUDyrL
+# IIcouOxvSK4rVKYpqhekzQwwHQYDVR0OBBYEFD9Q0l33XgRE0bG3DGVYiX6xoX03
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBMGA1UdJQQMMAoGCCsGAQUF
+# BwMDMEoGA1UdIARDMEEwNQYMKwYBBAGyMQECAQMCMCUwIwYIKwYBBQUHAgEWF2h0
+# dHBzOi8vc2VjdGlnby5jb20vQ1BTMAgGBmeBDAEEATBJBgNVHR8EQjBAMD6gPKA6
+# hjhodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNDb2RlU2lnbmlu
+# Z0NBUjM2LmNybDB5BggrBgEFBQcBAQRtMGswRAYIKwYBBQUHMAKGOGh0dHA6Ly9j
+# cnQuc2VjdGlnby5jb20vU2VjdGlnb1B1YmxpY0NvZGVTaWduaW5nQ0FSMzYuY3J0
+# MCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5zZWN0aWdvLmNvbTAgBgNVHREEGTAX
+# gRVmZWQubGFnQHByb3Rvbm1haWwuY2gwDQYJKoZIhvcNAQEMBQADggGBAJj2JGru
+# B4OuFoVRe64Tj83gGZbenpMtVVzLsSXzqoYv9Xy/+DdgQpBCksbCM7lL+BXbjlrO
+# aRAhtshMcPXyKC0LyUK/97fmuZSEd0uJv+5bA+8J+syr/Bm7mfy+Wp0y3vN/rH0Y
+# 6OuUm8YVnEsh3dN5LkYBtht0E4uOMhaAY8FvQ+UqoVO64IEYGZvfeIQxpeoOFcZ6
+# LXNTEPwUsXT6aBwrdzXoTthdzYPG1OZscG5t1A+Q4FzjPgye0asKDEcL6nIiLsgn
+# KFwVxJoOvSg+xpj4urUbQ5K5STKvy6FeN05JjN00w91pauOXowy+sWKsA2tk0sEj
+# 7GyXN5xpdmmpS9syU0Piom/9stGkGJurdoUPNcCCagSQ6+6lDVDhxSnMroR75hIS
+# lYKhmhoGgn1vWQqUwx7CywDXxMGY7GT+ufXCssa6xZT+Nn+CIaHpb4EJyrNdKN/m
+# uFkQgQqZUeeV0/azIa5L9T1IaEn1xhe2ETNqZCHeGzmpmvifXW/N9+/HZDGCAwow
+# ggMGAgEBMGkwVDELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRl
+# ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
+# ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
+# oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGLr+28+g6I9WnkInkgo
+# JteAj2DAMA0GCSqGSIb3DQEBAQUABIICAH76T982f+OYyQEy2HpbrlUIY2zozovN
+# zaZdM6PjLD3KnHbQLJRXx9eyexKv36QIMBdZJhRyncMRUvhOMQaF3X6pfIIRV5l2
+# 8BkEjvF1V1DlhFllOMBFUsdlC8Gs9CO3eW44i31LWTgHWOHphnDZfm57C3KAcve9
+# LlhNJaeR03qPYQ5FCNfaNAq4nxB+GaoE/SpfLrBaMgt4WWNwDKeBTUeC28MH3lC+
+# xG2Wu5fX0NnYcRqdV/ovZisk6SGjSvD71tsQ8dJgE1vZnKCAS4wsDVDLf85L0iR5
+# xKhb2JfSxZda6JysDcCaBBCd+qKqjIq5jdc2KKNQ3EdH2k1rSnHhyh0xYNwPQNkI
+# Sj3IVUAEgx/9VMktcTxVIXQIP0t57Po1Vq89m+FHq2ZVsUYQ6wFncV+IQgs8UHNN
+# vPE9DXWips5/Q2nLck36LBAicU9qO6+riKswsmmly39zx5nL6D/xg4c/xt6LB98h
+# M+s1Cia1TufkkIa1NX3VYgyC4b7BcM/nfd/RbfCekttLz52j1OVwXzMxjgx/ABqy
+# v6pm/mi8mFu2NkPTVlEnL7ZMFCOefh0G+EQfXLy0qjta5hLpp9YOCaV8FJZfLLpM
+# 6Rjgg2wJzRdNvKiAQEkzlO8VxMczm1Q/kKgew7DmyHk9iAYK996szXRfFb4473fR
+# U0Gxc/FLpcN1
 # SIG # End signature block
