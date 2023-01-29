@@ -139,7 +139,8 @@ function Find-AllPersistence
         'TelemetryController',
         'RDPWDSStartupPrograms',
         'ScheduledTasks',
-        'BitsJobsNotify'
+        'BitsJobsNotify',
+        'Screensaver'
     )]
     $PersistenceMethod = 'All',
      
@@ -1707,6 +1708,29 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
     
+    function Get-Screensaver
+    {
+      Write-Verbose -Message "$hostname - Getting Screensaver programs"
+      foreach($sid in $systemAndUsersHives) {
+          $legitimateProgram = "C:\Windows\system32\Mystify.scr", "C:\Windows\system32\Ribbons.scr", "C:\Windows\system32\Bubbles.scr", "C:\Windows\system32\ssText3d.scr", "C:\Windows\system32\scrnsave.scr", "C:\Windows\system32\PhotoScreensaver.scr"
+		  $screenSaverProgram = (Get-ItemProperty -ErrorAction SilentlyContinue -Path "$sid\Control Panel\Desktop\" -Name "SCRNSAVE.exe")
+		  if(($screenSaverProgram) -and ($screenSaverProgram."SCRNSAVE.EXE" -ne ""))
+          {
+            $executable = $screenSaverProgram."SCRNSAVE.EXE"
+            if ($legitimateProgram.Contains($Executable)) {
+				continue
+			}
+			$propPath = Convert-Path -Path $screenSaverProgram.PSPath
+			$propPath = $propPath + "SCRNSAVE.EXE"
+
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Screensaver Suspisious Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Persistence via screensaver" -Reference 'https://attack.mitre.org/techniques/T1546/002/'
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+            $PersistenceObject
+          }
+      }
+      Write-Verbose -Message ''
+    }
+
     Write-Verbose -Message "$hostname - Starting execution..."
 
     if($PersistenceMethod -eq 'All')
@@ -1748,6 +1772,8 @@ function Find-AllPersistence
       Get-TelemetryController
       Get-RDPWDSStartupPrograms
       Get-BitsJobsNotifyCmdLine
+      Get-Screensaver
+
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -1957,6 +1983,13 @@ function Find-AllPersistence
           Get-ScheduledTasks
           break
         }
+
+        'Screensaver'
+        {
+          Get-Screensaver
+          break
+        }
+
         'BitsJobsNotify'
         {
           Get-BitsJobsNotifyCmdLine

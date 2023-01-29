@@ -150,6 +150,7 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [Telemetry Controller](https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence/)
 - [x] [RDP WDS Startup Programs](https://persistence-info.github.io/Data/rdpwdstartupprograms.html)
 - [x] [Scheduled Tasks](https://attack.mitre.org/techniques/T1053/005/)
+- [x] [Screensaver](https://attack.mitre.org/techniques/T1546/002/)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
