@@ -139,7 +139,7 @@ function Find-AllPersistence
         'TelemetryController',
         'RDPWDSStartupPrograms',
         'ScheduledTasks',
-        'BitsJobs'
+        'BitsJobsNotify'
     )]
     $PersistenceMethod = 'All',
      
@@ -1680,7 +1680,7 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
 
-    function Get-BitsJobs
+    function Get-BitsJobsNotifyCmdLine
     {
       Write-Verbose -Message "$hostname - Getting BITS Jobs"
       $jobs =  Get-BitsTransfer -AllUsers | Where-Object {$_.JobState -eq "Error" } | Where-Object {$_.NotifyCmdLine.Length -gt 0}
@@ -1699,7 +1699,7 @@ function Find-AllPersistence
             $access = 'User'
           }
           
-          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'BITS Job NotifyCmdLine' -Classification 'MITRE ATT&CK T1197.003' -Path $propPath -Value $path -AccessGained $access -Note "Windows Background Intelligent Transfer Service (BITS) can be used to persistently execute code by creating long-standing jobs. Here we list jobs with an Error job state and NotifyCmdLine values, where the command line value is executed each time the BITS transfer is retried." -Reference 'https://attack.mitre.org/techniques/T1197/'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'BITS Job NotifyCmdLine' -Classification 'MITRE ATT&CK T1197.003' -Path $propPath -Value $path -AccessGained $access -Note "Windows Background Intelligent Transfer Service (BITS) can be used to persistently execute code by creating long-standing jobs. Specifically, if an attacker sets the SetNotifyCmdLine when creating a job which will error, the executable specified will be run everytime the BITS job fails." -Reference 'https://attack.mitre.org/techniques/T1197/'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
         } 
@@ -1747,7 +1747,7 @@ function Find-AllPersistence
       Get-SilentExitMonitor
       Get-TelemetryController
       Get-RDPWDSStartupPrograms
-      Get-BitsJobs
+      Get-BitsJobsNotifyCmdLine
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -1957,9 +1957,9 @@ function Find-AllPersistence
           Get-ScheduledTasks
           break
         }
-        'BitsJobs'
+        'BitsJobsNotify'
         {
-          Get-BitsJobs
+          Get-BitsJobsNotifyCmdLine
           break
         }
       }
@@ -2015,8 +2015,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUFxmQchjaNjD1bRrCGGLNp+Vu
-# dxGgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURZhwdOrJPqVHWJH4Kx2q1uB3
+# yH2gghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2116,17 +2116,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGFHRdeOFgn+ri5sZiJh
-# U007zNt+MA0GCSqGSIb3DQEBAQUABIICABSZauHTW05Ws/hX7oyVnP/aHzvYrOoR
-# P/cuu7MxwwxGtPEnUZCPvSEGFn4bz5BQnudku4QAeb3ylm/4b29e+8oqXWkpLNYf
-# UKx+pMYrjQ1t+bQc0kQZJAh8VlHeBZbuT99rng8o7depMAq8IpNnxW/LsyCE6LSh
-# OPMOKtHjH1KBuaeAUdZIgreZkSLNaB/oWVSYoABGqeumy1qjpXIra3pkleqJMdNR
-# CzjbfgQhoJJprJYLP3JSTpB4YBKAEtSS1wkG4nG8r46PUKuzUaPuVnMNp/1RsbMq
-# 85zFkzV7VAzTU2ugIMdIDfwXbbaDphn3zWZ7wv1KMkWwv+UdnVGI55mPbHpqIhsb
-# 3rZRJdt9Y/ZYy4gtQXxLOQZSnJAJjmOviLosy5fjrCqNLG/IoJilOwbYoG5Uhiia
-# fRA9g1ByN+kBAENRg5EvPRBKfGqMyX8SJXmSKd9j82c35d9aYxe5CjX/ikzaMxmW
-# 7EHj1Ec48QPu9S+SFybaOMQeXJf01N4DYQuHIvLfiWwokCbgnUYNrr1+oVJeB9kO
-# Ib8Mt2ixVl53KpOYISIRfTdYMnE8AAwmLEaPJpat/bIHKdiKRUK1nHWPul0V7Ssc
-# qJJrxVXSmeBtYDnKSiJ3MsLa3qKKKzXHSHnGkpIBQ4NmarX/TX6iji2UupfJEa4v
-# givlNXteDPcR
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFDB273iAVqgHKnQHFoTo
+# z2KSS1jIMA0GCSqGSIb3DQEBAQUABIICAGdO2louN5jlLe+wfvOKn9c72qS70sCf
+# vZBAWJ12atw9g6ExExxLdXwhDY/leMB09J+fsuMZuOl8pYrKjK5FVXIejUK/bc5y
+# /ksaGK0FNybqJgkFttrf7VmOzk4Qfgi6aq5afzMNX6CISCtGoFnWYi9PBU2VcD6g
+# dM7zd9Ytyw5QAP475GcYj/ZQaHSQa9ZB8bDoGAVVG4aS/692LdGITO4T59ZRFUhG
+# dpcW0lTDayVMewgrQnJ3XvV4H5PFbaPT5qaCVMC0CvC6DSYcxUUlPqeVl5+2LE2g
+# 6DUcuRhuhpQorgv7Riv4spn0KGceB8uBFjIFsHsJvRbSPws815wV58KK5pIEd3X3
+# 7wxv1rkR6KIF1mtTA66G2xzTebBq88hFyWLpjpga/+CMTX1gD4mhAUJmmF7/qUbU
+# mritPUgmG4Kc8jb4WkbGchxml1HVsyCly5CuP7h0m1XnJic9Hr0XjmUmqu39FtIH
+# +DD4bTyKN7Tj7Ddeh+N0Kb+5KfFRK/T9l2DEfqQOAKY2tQJ2NFnSrpLZ6jG3R2F7
+# gwYoYk/7dSd41LobPOhFNOEtU0WfxUz5gNLt5KJUcJYk6YRS5uGho5obic+96/c+
+# 8p07cHcLXcNLHlum0VqSHF+PwQePU21Y541P0Ce3cy7TQNzJ+gXpJbEmZ7xiUu0e
+# cX+NMsS+kE8n
 # SIG # End signature block
