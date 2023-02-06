@@ -21,18 +21,16 @@ Why writing such a tool, you might ask. Well, for starters, I tried looking arou
 ## The How
 Using PersistenceSniper is as simple as firing up Powershell as Administrator and running:
 ```
-PS C:\> git clone https://github.com/last-byte/PersistenceSniper
-PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper\PersistenceSniper.psd1
-PS C:\> Find-AllPersistence
-```
-
-If you prefer sticking to the Powershell Gallery version (which is automatically updated through a Github action every time a new version is pushed here on Github), open up Powershell as Administrator and run:
-```
 PS C:\> Install-Module PersistenceSniper
 PS C:\> Import-Module PersistenceSniper
 PS C:\> Find-AllPersistence
 ```
-
+This will install the PersistenceSniper module using the Powershell Gallery version (which is automatically updated through a Github action every time a new version is pushed here on Github). Otherwise, you can use the Github hosted version:
+```
+PS C:\> git clone https://github.com/last-byte/PersistenceSniper
+PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper\PersistenceSniper.psd1
+PS C:\> Find-AllPersistence
+```
 If you need a detailed explanation of how to use the tool or which parameters are available and how they work, PersistenceSniper's `Find-AllPersistence` supports Powershell's help features, so you can get detailed, updated help by using the following command after importing the module:
 ```  
 Get-Help -Name Find-AllPersistence -Full
