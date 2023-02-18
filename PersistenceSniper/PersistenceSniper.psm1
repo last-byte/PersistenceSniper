@@ -291,9 +291,9 @@ function Find-AllPersistence
         [String]
         $pathName
       )
-      $pathName = $pathName -Replace '"'
+      $pathName = [System.Environment]::ExpandEnvironmentVariables($pathName) -Replace '"'
       
-      $match = [regex]::Match($pathName, '[A-Za-z0-9\s]+\.(exe|dll|ocx|cmd|bat|ps1)')
+      $match = [regex]::Match($pathName, '[A-Za-z0-9\s]+\.(exe|dll|ocx|cmd|bat|ps1)', [Text.RegularExpressions.RegexOptions]::IgnoreCase)
       if($match.Success)
       {
         # Grab Index from the [regex]::Match() result
@@ -1681,7 +1681,7 @@ function Find-AllPersistence
         {
           $propPath = $task.TaskPath
           $propPath += $task.TaskName
-          $path = ($task.Actions).Execute
+          $path = ($task.Actions).Execute + " " + ($task.Actions).Arguments
           if($task.UserId -eq 'SYSTEM')
           {
             $access = 'System'
