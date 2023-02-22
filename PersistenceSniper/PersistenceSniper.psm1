@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.9.0
+    .VERSION 1.9.1
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -291,9 +291,9 @@ function Find-AllPersistence
         [String]
         $pathName
       )
-      $pathName = $pathName -Replace '"'
+      $pathName = [System.Environment]::ExpandEnvironmentVariables($pathName) -Replace '"'
       
-      $match = [regex]::Match($pathName, '[A-Za-z0-9\s]+\.(exe|dll|ocx|cmd|bat|ps1)')
+      $match = [regex]::Match($pathName, '[A-Za-z0-9\s]+\.(exe|dll|ocx|cmd|bat|ps1)', [Text.RegularExpressions.RegexOptions]::IgnoreCase)
       if($match.Success)
       {
         # Grab Index from the [regex]::Match() result
@@ -1681,7 +1681,7 @@ function Find-AllPersistence
         {
           $propPath = $task.TaskPath
           $propPath += $task.TaskName
-          $path = ($task.Actions).Execute
+          $path = ($task.Actions).Execute + " " + ($task.Actions).Arguments
           if($task.UserId -eq 'SYSTEM')
           {
             $access = 'System'
@@ -2072,8 +2072,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzcvSjud8Ydf5gmNd2n2OpExz
-# 0tOgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQjAJPAlow8ZYRTAbDORoRshK
+# BzWgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2173,17 +2173,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFGLr+28+g6I9WnkInkgo
-# JteAj2DAMA0GCSqGSIb3DQEBAQUABIICAH76T982f+OYyQEy2HpbrlUIY2zozovN
-# zaZdM6PjLD3KnHbQLJRXx9eyexKv36QIMBdZJhRyncMRUvhOMQaF3X6pfIIRV5l2
-# 8BkEjvF1V1DlhFllOMBFUsdlC8Gs9CO3eW44i31LWTgHWOHphnDZfm57C3KAcve9
-# LlhNJaeR03qPYQ5FCNfaNAq4nxB+GaoE/SpfLrBaMgt4WWNwDKeBTUeC28MH3lC+
-# xG2Wu5fX0NnYcRqdV/ovZisk6SGjSvD71tsQ8dJgE1vZnKCAS4wsDVDLf85L0iR5
-# xKhb2JfSxZda6JysDcCaBBCd+qKqjIq5jdc2KKNQ3EdH2k1rSnHhyh0xYNwPQNkI
-# Sj3IVUAEgx/9VMktcTxVIXQIP0t57Po1Vq89m+FHq2ZVsUYQ6wFncV+IQgs8UHNN
-# vPE9DXWips5/Q2nLck36LBAicU9qO6+riKswsmmly39zx5nL6D/xg4c/xt6LB98h
-# M+s1Cia1TufkkIa1NX3VYgyC4b7BcM/nfd/RbfCekttLz52j1OVwXzMxjgx/ABqy
-# v6pm/mi8mFu2NkPTVlEnL7ZMFCOefh0G+EQfXLy0qjta5hLpp9YOCaV8FJZfLLpM
-# 6Rjgg2wJzRdNvKiAQEkzlO8VxMczm1Q/kKgew7DmyHk9iAYK996szXRfFb4473fR
-# U0Gxc/FLpcN1
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFJ51f4gNykcN+Tdx2OLr
+# LCrmmlY+MA0GCSqGSIb3DQEBAQUABIICAAX6+Uk/m8gFYj9tnwARnp+X6f0cDEic
+# qNQziXTzlh7bk7yL0GZ7yAXAyjOgTqrD+gvi5EhnM0q4GL2fE5FJGoX8FH1ZoguH
+# sxJNqR+jWoFIVH0BEvemE0OK3Vwq057GK5v3QFoGsC49DPq8Tr6KRLTF0fNlMbzJ
+# 5DpeSUzYRXO2ipovuKzPzBFY7BCmjZu/QPLFzDRlE0OKPCttwpSJYo92HnZBmFy7
+# XcoYUCe44kE1T8MHAfVRHV1GgHHUvTatgyqXKhrExDxq9up71GwoU1shoe5yPw9D
+# e6d/q6cwCqtIvakgVpciyc4tS5cfQ2SMNp71FJNndCT7VGbB4loOW7zWIzKgU8A9
+# PuEUDksUY8a/mgKMDmSFzczUxGid4sPu21Wkgv3Z0F2zO4f7Vy4v28YrdWT8jN34
+# /hF8D1oj8tlZ0MxGdn48DZ0B71jnOFvzutTiKHLBjd3UCTksuUrifdCtM6JlPC9M
+# pjidchox6Zzfo2XAt/oMmzD4bG/SCneDPrDGQM43uKsI4fnPwLyGeN+GvdQhaV2T
+# D5AVsUU2u74Fo+vZStjwM5TJMBw3lM5fyrguaAGYL0wc7knJbLeBtxprXsqipPqS
+# 0pr6iOTdu78MUjZiAaoy/WQbkfmuLt3Iqu5FVpBPPRch8EJTHNsm6TvNSA7DkNR2
+# f4T52jp3A9jb
 # SIG # End signature block

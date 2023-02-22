@@ -8,8 +8,8 @@
   <tr>
     <td class="tg-0pky"><p align="center">
 <img src="https://blog.notso.pro/img/persistencesniper2.png" width="60%">
-<p align="center"><a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/github/languages/top/last-byte/PersistenceSniper?label=Powershell" alt="language" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/p/PersistenceSniper?color=informational&amp;label=Platform" alt="platform badge" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/v/PersistenceSniper?label=Gallery%20Version" alt="version" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/dt/PersistenceSniper?label=Gallery%20Downloads" alt="gallery downloads" style="text-align:center;display:block;"></a> <a href="https://github.com/last-byte/PersistenceSniper/releases"><img src="https://img.shields.io/github/downloads/last-byte/PersistenceSniper/total?label=Releases%20Downloads" alt="releases downloads" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/github/actions/workflow/status/last-byte/PersistenceSniper/main.yml?branch=main&label=Github%20CI" alt="workflow" style="text-align:center;display:block;"></a> <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/github/license/last-byte/PersistenceSniper?color=bright%20green&amp;label=License" alt="license" style="text-align:center;display:block;"></a> <a href="https://twitter.com/last0x00"><img src="https://img.shields.io/twitter/follow/last0x00?style=social" alt="twitter" style="text-align:center;display:block;"></a> <a href="https://twitter.com/dottor_morte"><img src="https://img.shields.io/twitter/follow/dottor_morte?style=social" alt="twitter_rick" style="text-align:center;display:block;"></a></p> 
-<p align="center">PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. The script is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a>. The tool is under active development with new releases coming out by the week, so make sure to use the up-to-date version.</p>
+<p align="center"><a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/badge/Language-Powershell-blue" alt="language" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/v/PersistenceSniper?label=Module%20Version" alt="version" style="text-align:center;display:block;"></a> <a href="https://github.com/last-byte/PersistenceSniper#persistence-techniques-implemented-so-far"><img src="https://img.shields.io/badge/Persistence%20Techniques-43-brightgreen" alt="number of techniques implemented" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/badge/Digital%20Signature-Valid-brightgreen" alt="workflow" style="text-align:center;display:block;"></a> <a href="https://www.powershellgallery.com/packages/PersistenceSniper/"><img src="https://img.shields.io/powershellgallery/dt/PersistenceSniper?label=Gallery%20Downloads" alt="gallery downloads" style="text-align:center;display:block;"></a> <a href="https://twitter.com/last0x00"><img src="https://img.shields.io/twitter/follow/last0x00?style=social" alt="twitter" style="text-align:center;display:block;"></a> <a href="https://twitter.com/dottor_morte"><img src="https://img.shields.io/twitter/follow/dottor_morte?style=social" alt="twitter_rick" style="text-align:center;display:block;"></a> <a href="https://www.buymeacoffee.com/last0x00"><img src="https://img.shields.io/badge/buy%20me%20a-coffee-yellow" alt="buy me a coffee" style="text-align:center;display:block;"></a></p> 
+<p align="center">PersistenceSniper is a Powershell module that can be used by Blue Teams, Incident Responders and System Administrators to hunt persistences implanted in Windows machines. It is also available on <a href=https://www.powershellgallery.com/packages/PersistenceSniper/1.0>Powershell Gallery</a> and it is digitally signed with a valid code signing certificate. The tool is under active development with new releases coming out by the week, so make sure to use the up-to-date version.</p>
 </td>
   </tr>
 </tbody>
@@ -18,21 +18,19 @@
 ## The Why
 Why writing such a tool, you might ask. Well, for starters, I tried looking around and I did not find a tool which suited my particular use case, which was looking for known persistence techniques, automatically, across multiple machines, while also being able to quickly and easily parse and compare results. Sure, [Sysinternals' Autoruns](https://docs.microsoft.com/en-us/sysinternals/downloads/autoruns) is an amazing tool and it's definitely worth using, but, given it outputs results in non-standard formats and can't be run remotely unless you do some shenanigans with its command line equivalent, I did not find it a good fit for me. Plus, some of the techniques I implemented so far in PersistenceSniper have not been implemented into Autoruns yet, as far as I know. Anyway, if what you need is an easy to use, GUI based tool with lots of already implemented features, Autoruns is the way to go, otherwise let PersistenceSniper have a shot, it won't miss it :)
 
-## Usage
+## The How
 Using PersistenceSniper is as simple as firing up Powershell as Administrator and running:
-```
-PS C:\> git clone https://github.com/last-byte/PersistenceSniper
-PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper\PersistenceSniper.psd1
-PS C:\> Find-AllPersistence
-```
-
-If you prefer sticking to the Powershell Gallery version (which is automatically updated through a Github action every time a new version is pushed here on Github), open up Powershell as Administrator and run:
 ```
 PS C:\> Install-Module PersistenceSniper
 PS C:\> Import-Module PersistenceSniper
 PS C:\> Find-AllPersistence
 ```
-
+This will install the PersistenceSniper module using the Powershell Gallery version (which is automatically updated through a Github action every time a new version is pushed here on Github). Otherwise, you can use the Github hosted version:
+```
+PS C:\> git clone https://github.com/last-byte/PersistenceSniper
+PS C:\> Import-Module .\PersistenceSniper\PersistenceSniper\PersistenceSniper.psd1
+PS C:\> Find-AllPersistence
+```
 If you need a detailed explanation of how to use the tool or which parameters are available and how they work, PersistenceSniper's `Find-AllPersistence` supports Powershell's help features, so you can get detailed, updated help by using the following command after importing the module:
 ```  
 Get-Help -Name Find-AllPersistence -Full
@@ -166,12 +164,7 @@ Furthermore, these people contributed to the project:
 - [Vadim](https://twitter.com/D3F7A5105)
 - [fkadibs](https://twitter.com/fkadibs)
 
-
 I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/) for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell module.
 
 ## License
 This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license. TL;DR: you can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission.
-
-## Closing words
-If you want, you can 
-<a href="https://www.buymeacoffee.com/last0x00" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
