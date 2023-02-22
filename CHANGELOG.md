@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.2
+Fixes:
+   - Fixed 3 lines of code dealing with minor bugs
+
 ## 1.9.1
 Features:
    - Added the following persistence techniques:
