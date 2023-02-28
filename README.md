@@ -163,6 +163,7 @@ Furthermore, these people contributed to the project:
 - [Cecio](https://twitter.com/red5heep)
 - [Vadim](https://twitter.com/D3F7A5105)
 - [fkadibs](https://twitter.com/fkadibs)
+- [suinswofi](https://github.com/suinswofi)
 
 I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/) for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell module.
 
