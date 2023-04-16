@@ -171,4 +171,4 @@ Furthermore, these people contributed to the project:
 I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/) for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell module.
 
 ## License
-This project is under the [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) license. TL;DR: you can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission.
+This project is under the [Commons Clause version of the MIT License](https://github.com/last-byte/PersistenceSniper/blob/main/LICENSE) license. TL;DR: you can copy, modify, distribute and perform the work for whatever reason, __excluding__ commercial purposes, all without asking permission.
