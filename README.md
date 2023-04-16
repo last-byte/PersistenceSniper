@@ -109,7 +109,7 @@ PS C:\> Find-AllPersistence -DiffCSV false_positives.csv
 One cool way to use PersistenceSniper my mate [Riccardo](https://twitter.com/dottor_morte) suggested is to use it in an incremental way: you could setup a Scheduled Task which runs every X hours, takes in the output of the previous iteration through the `-DiffCSV` parameter and outputs the results to a new CSV. By keeping track of the incremental changes, you should be able to spot within a reasonably small time frame new persistences implanted on the machine you are monitoring.
 
 ## Persistence techniques implemented so far
-The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following __43 techniques__ have been implemented successfully:
+The topic of persistence, especially on Windows machines, is one of those which see new discoveries basically every other week. Given the sheer amount of persistence techniques found so far by researchers, I am still in the process of implementing them. So far the following __44 techniques__ have been implemented successfully:
 - [x] [Run Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [RunOnce Key](https://attack.mitre.org/techniques/T1547/001/)
 - [x] [Image File Execution Options](https://attack.mitre.org/techniques/T1546/012/)
@@ -153,6 +153,7 @@ The topic of persistence, especially on Windows machines, is one of those which 
 - [x] [BITS Jobs NotifyCmdLine](https://attack.mitre.org/techniques/T1197/)
 - [x] [Power Automate](https://github.com/mbrg/defcon30/tree/main/No_Code_Malware)
 - [x] [Screensaver](https://attack.mitre.org/techniques/T1546/002/)
+- [x] [Office Templates](https://attack.mitre.org/techniques/T1137/001)
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:

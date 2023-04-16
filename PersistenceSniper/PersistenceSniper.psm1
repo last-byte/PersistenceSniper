@@ -1804,7 +1804,7 @@ function Find-AllPersistence
           $fullname = $file.FullName
           $path = Split-Path -Path $fullname
           Write-Verbose -Message "$hostname - Found $fullname"
-          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Office Application Startup' -Classification 'MITRE ATT&CK T1137' -Path "$path\" -Value "$fullname" -AccessGained 'User' -Note "Attackers can drop macro-enabled files in specific folders to trigger their execution every time the victim user opens an Office application." -Reference 'https://attack.mitre.org/techniques/T1137/'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Office Application Startup' -Classification 'MITRE ATT&CK T1137.001' -Path "$path\" -Value "$fullname" -AccessGained 'User' -Note "Attackers can drop macro-enabled files in specific folders to trigger their execution every time the victim user opens an Office application." -Reference 'https://attack.mitre.org/techniques/T1137/'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
         }
@@ -2146,8 +2146,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUm6/zQ0O/OQbFHqxz7T9lvwqa
-# g1igghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNxdEvsV28PafAaHt3pNrE1qx
+# m9CgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2247,17 +2247,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFLjpO721j3FMhPobbRAp
-# 20+iAi5oMA0GCSqGSIb3DQEBAQUABIICAB7nGOERM55qEGKn8AUFnZzHC/BkXm2w
-# 1/8gll8fKcB3tE8ZvCORPSo4z9mbeQITF1VGtF4LnhENqKQ8R2WeLXawhzOigX6O
-# 0/6vxpFNU54E1yqoTMf7qWf/7np3BqpGdz/anlb9+cKrnucY6KJt13+J7wK95UFJ
-# VrzaloQzq+P5cTi1Rlnba5/HdUr58MNeqPdfiRbzJqQr7QhJGSpa3xhXp4LMkz8i
-# 1oYKolyLG/ztScBG2nKJLHmFI4v0+YN+fDEmEOVWS1KYPCEVY0q6HsfzZGIdfDQi
-# pJrJVNDOMchipI4tcx8dWFU1ZKS3BamA5jKfSYU7sJ+fkk0INz9dOhHwUJkCbHTg
-# pfFtOy5q8qyvf/zk0vxtCDGLZCdV9rkySitbbIgzVdYG6dnSE/wFDmgYglCO4vJ/
-# 9l5DBPCXHS3qa6wEI0jnCUH7dV8NEYneFtEEUjjtjzAhAewb093rOdF8qMQ0K0cr
-# Hm0cxFBuZGNdr4QdzgY0ELFDK/kAZU+XKS5wGGFaZSbChNokgAxl2v9cA1TktzWZ
-# NliWocpe7sl1wS07ubmndBu3ivERtGZSagDzIXaV5kKQb8hwBlwZM1t32kjXfTX5
-# issWfD/IGJqSN4ynZw1pP4mJGd2E8sTL+PpURkfCBrOQ1sXkfp5DE+C6WVpevmVp
-# NzzNTE5j2c8Y
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFP4126w50JqyELJcBelf
+# 1l3kjZZTMA0GCSqGSIb3DQEBAQUABIICADWgsnjKhqeDoBf65X3vln4JlvZ8R9PR
+# jwnzJNv9yUMB+Ke7iQZ2l52HYNr1oa/i5gdgrXeX0c77vBNqBVNwgv/CRj/DVcGx
+# 2P6bXcwGi3LjlEB+abeyQsofvleFLEcKfvw/+sFedr8BQtz1UynM8WBACZJQOJAc
+# 40lSh9V5pHot9Osbl7xlGa3aHsn6oAU9IKMV3aRcZABAhmVbOQtU8yHCb2mG99bz
+# CdMRECEUsh/MoRdZQd8sZM3Y3rDYc5QB+Jnqyvln7TDVM0uIR0HM+aytYF6zcFFB
+# 8fmqALX+wywu47zXAZgBImSQjQ9I8J4qiFEN7frCciQbRF4w+iiak8l51SQTuhtR
+# 60zrS88BZOfMkmoaxqRwb5FVL2zecAfKbgGxlhe8GFU/28DK5Ud2KBFHTXIwlKVY
+# zv5u07n8RSbT9S8v/VWURHDkySbGNaprdhB5W02/i1ZcT2+bEAOpXSbHqwHM2HL8
+# 5cKA39+UKbKZkp/D/Qnoq5/6wNYTgLitYhnJb26NwOVdJXrVjjZ5WiAb7g5iez2d
+# GjODiFr9hSpEa6qUI7f9EFD6Ae0NkFy+3wQIZjyEeUxO99KUeg18N4IkF9gTvyb6
+# 8OJ97Xibe5jkcEiBFzpRxrKcRjheI1Klj6jBWh/gcTOWFeX/HgxWr6vks5Nm8kgx
+# BlrCTb7JlEm1
 # SIG # End signature block
