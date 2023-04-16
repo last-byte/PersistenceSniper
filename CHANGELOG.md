@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.3
+Features:
+   - Added the possibility of passing a Virustotal API key and check if the hash of the detected file is known.
+   - Malicious Office Add-Ins are now detected
+   - New license has been implemented.
+
 ## 1.9.2
 Fixes:
    - Fixed 3 lines of code dealing with minor bugs

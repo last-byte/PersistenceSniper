@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.9.2
+    .VERSION 1.9.3
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -10,11 +10,11 @@
 
     .COMPANYNAME @APTortellini
 
-    .COPYRIGHT CC0 1.0 Universal
+    .COPYRIGHT Commons Clause
 
     .TAGS Windows Persistence Detection Blue Team
 
-    .LICENSEURI https://creativecommons.org/publicdomain/zero/1.0/
+    .LICENSEURI https://github.com/last-byte/PersistenceSniper/blob/main/LICENSE
 
     .PROJECTURI https://github.com/last-byte/PersistenceSniper
 
@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This release introduces some minor bug fixes.
+    This release introduces some new major functionalities along new detections. Virustotal is now queried for detections. New detections are listed in the CHANGELOG.
 
     .PRIVATEDATA
 
@@ -141,7 +141,9 @@ function Find-AllPersistence
         'ScheduledTasks',
         'BitsJobsNotify',
         'Screensaver',
-        'PowerAutomate'
+        'PowerAutomate',
+        'OfficeAddinsAndTemplates',
+        'Services'
     )]
     $PersistenceMethod = 'All',
      
@@ -159,7 +161,11 @@ function Find-AllPersistence
         
     [Parameter(Position = 4)]
     [String]
-    $OutputCSV = $null  
+    $OutputCSV = $null, 
+
+    [Parameter(Position = 5)]
+    [String]
+    $VTApiKey = $null 
   )
   
   $ScriptBlock = 
@@ -211,7 +217,10 @@ function Find-AllPersistence
         $IsBuiltinBinary = $false,
 		
         [Bool]
-        $IsLolbin = $false
+        $IsLolbin = $false,
+
+        [String]
+        $VTEntries = $null
       )
       $PersistenceObject = [PSCustomObject]@{
         'Hostname' 			  = $Hostname
@@ -224,9 +233,38 @@ function Find-AllPersistence
         'Reference'    		= $Reference
         'Signature'	  		= Find-CertificateInfo (Get-ExecutableFromCommandLine $Value)
         'IsBuiltinBinary'	= Get-IfBuiltinBinary (Get-ExecutableFromCommandLine $Value)
-        'IsLolbin'			  = Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
+        'IsLolbin'			= Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
+        'VTEntries'			= Get-IfHashIsMalicious(Get-ExecutableFromCommandLine $Value)
       } 
       return $PersistenceObject
+    }
+    
+    function Get-IfHashIsMalicious($executable)
+    {
+      $authenticode = Get-AuthenticodeSignature($executable)
+      if ($authenticode.IsOSBinary -eq $false) {
+        if ($VTApiKey)
+        {
+          $headers = @{
+            'x-apikey' = $VTApiKey
+          }
+          $hash = (Get-FileHash $executable).Hash
+          $result = Invoke-RestMethod -Headers $headers "https://www.virustotal.com/api/v3/search?query=$hash"
+          Sleep 1
+          if ($result.data) {
+            $result.data.attributes.last_analysis_stats.malicious
+          } else {
+            return "0"
+          }
+        }
+        else {
+          return "N/A"
+        }
+      }
+      else {
+        return "N/A"
+      }
+
     }
 	
 	
@@ -1054,7 +1092,7 @@ function Find-AllPersistence
           {
             continue
           }          
-          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Startup Folder' -Classification 'MITRE ATT&CK T1547.001' -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Value "$file" -AccessGained 'User' -Note "The executables under the \AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ of a user's folder are run every time that user logs in." -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Startup Folder' -Classification 'MITRE ATT&CK T1547.001' -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Value "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$file" -AccessGained 'User' -Note "The executables under the \AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ of a user's folder are run every time that user logs in." -Reference 'https://attack.mitre.org/techniques/T1547/001/'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
           $found = $true
@@ -1731,23 +1769,46 @@ function Find-AllPersistence
       Write-Verbose -Message "$hostname - Getting Screensaver programs"
       foreach($sid in $systemAndUsersHives) 
       {
-          $legitimatePrograms = "C:\Windows\system32\Mystify.scr", "C:\Windows\system32\Ribbons.scr", "C:\Windows\system32\Bubbles.scr", "C:\Windows\system32\ssText3d.scr", "C:\Windows\system32\scrnsave.scr", "C:\Windows\system32\PhotoScreensaver.scr"
+        $legitimatePrograms = "C:\Windows\system32\Mystify.scr", "C:\Windows\system32\Ribbons.scr", "C:\Windows\system32\Bubbles.scr", "C:\Windows\system32\ssText3d.scr", "C:\Windows\system32\scrnsave.scr", "C:\Windows\system32\PhotoScreensaver.scr"
         $screenSaverProgram = (Get-ItemProperty -ErrorAction SilentlyContinue -Path "$sid\Control Panel\Desktop\" -Name "SCRNSAVE.exe")
         if(($screenSaverProgram) -and ($screenSaverProgram."SCRNSAVE.EXE" -ne ""))
-          {
-            $executable = $screenSaverProgram."SCRNSAVE.EXE"
-            if ($legitimatePrograms.Contains($Executable)) {
+        {
+          $executable = $screenSaverProgram."SCRNSAVE.EXE"
+          if ($legitimatePrograms.Contains($Executable)) {
             continue
           }
           $propPath = Convert-Path -Path $screenSaverProgram.PSPath
           $propPath = $propPath + "SCRNSAVE.EXE"
 
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Suspicious Screensaver Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Executables specified under the SCRNSAVE.EXE property of the HKEY_USERS\<SID>\Control Panel\Desktop key will be run in place of the legitimate screensaver, thus achieving persistence on a compromised machine. " -Reference 'https://attack.mitre.org/techniques/T1546/002/'
-            $null = $persistenceObjectArray.Add($PersistenceObject)
-            $PersistenceObject
-          }
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Suspicious Screensaver Program' -Classification 'MITRE ATT&CK T1546.002' -Path $propPath -Value $executable -AccessGained 'User' -Note "Executables specified under the SCRNSAVE.EXE property of the HKEY_USERS\<SID>\Control Panel\Desktop key will be run in place of the legitimate screensaver, thus achieving persistence on a compromised machine. " -Reference 'https://attack.mitre.org/techniques/T1546/002/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
       }
       Write-Verbose -Message ''
+    }
+    
+    function Get-OfficeTemplates
+    {
+      Write-Verbose -Message "$hostname - Checking if users' Office folders contains interesting templates..."
+      $userDirectories = Get-ChildItem -Path 'C:\Users\'
+      foreach($directory in $userDirectories)
+      {
+        $addins = Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Word\STARTUP\" 
+        $addins += Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Templates\" -Filter *.dotm
+        $addins += Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Excel\XLSTART\"
+        $addins += Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\AddIns\"
+        $addins += Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Outlook\" -Filter *.OTM
+        foreach($file in $addins)
+        {
+          $fullname = $file.FullName
+          $path = Split-Path -Path $fullname
+          Write-Verbose -Message "$hostname - Found $fullname"
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Office Application Startup' -Classification 'MITRE ATT&CK T1137' -Path "$path\" -Value "$fullname" -AccessGained 'User' -Note "Attackers can drop macro-enabled files in specific folders to trigger their execution every time the victim user opens an Office application." -Reference 'https://attack.mitre.org/techniques/T1137/'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          $PersistenceObject
+        }
+      }
     }
 
     Write-Verbose -Message "$hostname - Starting execution..."
@@ -2019,6 +2080,20 @@ function Find-AllPersistence
           Get-PowerAutomate
           break
         }
+        'Services'
+        {
+          Get-WindowsServices 
+          break
+        }
+        'ScheduledTasks'
+        {
+          Get-ScheduledTasks
+          break
+        }
+        'OfficeAddinsAndTemplates'
+        {
+          Get-OfficeTemplates
+        }
       }
     }
 
@@ -2068,12 +2143,11 @@ function Find-AllPersistence
   
   Write-Verbose -Message 'Script execution finished.'  
 }
-
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzAaG8v6CXWt6nCb6hV+wnyd8
-# WdOgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUm6/zQ0O/OQbFHqxz7T9lvwqa
+# g1igghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2173,17 +2247,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFOlmzIlSTzQM5b+GlR9d
-# 853R0EzOMA0GCSqGSIb3DQEBAQUABIICAFefnwmMAGtmBrcJAeG5rfCaSJDdPHe1
-# LD9p2FGfMP/EyD8R74u4aLkUp7zEtJ+V8Mt78QJ6ftrVmvYFK8JZ3Q/PiC8ltHXK
-# 5D0PoAAQtmOdruY6HiFA4Y23FL0VoFmc7DTUmxFogrutNkxcCGgbuxsVLi715NzT
-# O/H1R8uvg/MgO6eIJJYzTO4ohypWOFwG70JMSRaIh17HDm9zGT3b/Tl+B7S1HCUO
-# 2+5X7Oci3dG4DRthQt213FxRwFujLlPn3lwZpFFITdVN44CNpp3Cs2vYqDkXHZIK
-# +s5vO0UespCaSWbbdA1UAHmPEhymaEL24JLJEDcO6tff/uMa3hBeWWVDJDIryRJU
-# VxlcGf2cX9QhT6kxJm6EDkhjE2EATzpDhU7zjBoUdgsTD2DxwXlevT5q4DqHX9El
-# kJUQW8ZAvy70MENkIcmN9qsByjL8Blz6W+w4J2+slbSyZ0w8tiqSyTqVb2EWFRIv
-# yxvXvmKhmG3HJXA9KbxjwfBJTBGOsw+CuZyx3Su9zFIQWm3l9889Ht/AuKjy5I+6
-# SkBR7sebNBnNwTzUcjvDg2g4vNcfxKH6wYKuicaT9/7+gGabQkd7lpGDd0JYOCHL
-# P5vjGqs4mwAaMEWryxnTnNGGxivsa2goo26RJ4rwOsoE+K0Ky3p4CL5P2pz2+wxw
-# zIbCjFPSv8yK
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFLjpO721j3FMhPobbRAp
+# 20+iAi5oMA0GCSqGSIb3DQEBAQUABIICAB7nGOERM55qEGKn8AUFnZzHC/BkXm2w
+# 1/8gll8fKcB3tE8ZvCORPSo4z9mbeQITF1VGtF4LnhENqKQ8R2WeLXawhzOigX6O
+# 0/6vxpFNU54E1yqoTMf7qWf/7np3BqpGdz/anlb9+cKrnucY6KJt13+J7wK95UFJ
+# VrzaloQzq+P5cTi1Rlnba5/HdUr58MNeqPdfiRbzJqQr7QhJGSpa3xhXp4LMkz8i
+# 1oYKolyLG/ztScBG2nKJLHmFI4v0+YN+fDEmEOVWS1KYPCEVY0q6HsfzZGIdfDQi
+# pJrJVNDOMchipI4tcx8dWFU1ZKS3BamA5jKfSYU7sJ+fkk0INz9dOhHwUJkCbHTg
+# pfFtOy5q8qyvf/zk0vxtCDGLZCdV9rkySitbbIgzVdYG6dnSE/wFDmgYglCO4vJ/
+# 9l5DBPCXHS3qa6wEI0jnCUH7dV8NEYneFtEEUjjtjzAhAewb093rOdF8qMQ0K0cr
+# Hm0cxFBuZGNdr4QdzgY0ELFDK/kAZU+XKS5wGGFaZSbChNokgAxl2v9cA1TktzWZ
+# NliWocpe7sl1wS07ubmndBu3ivERtGZSagDzIXaV5kKQb8hwBlwZM1t32kjXfTX5
+# issWfD/IGJqSN4ynZw1pP4mJGd2E8sTL+PpURkfCBrOQ1sXkfp5DE+C6WVpevmVp
+# NzzNTE5j2c8Y
 # SIG # End signature block
