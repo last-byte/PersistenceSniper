@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.9.3
+    .VERSION 1.10.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This release introduces some new major functionalities along new detections. Virustotal is now queried for detections. New detections are listed in the CHANGELOG.
+    This release introduces three new detections, along some bug fixes. Everything is listed in the CHANGELOG.
 
     .PRIVATEDATA
 
@@ -143,7 +143,10 @@ function Find-AllPersistence
         'Screensaver',
         'PowerAutomate',
         'OfficeAddinsAndTemplates',
-        'Services'
+        'Services',
+        'ExplorerContextMenu',
+        'ServiceControlManagerSD',
+        'OfficeAiHijacking'
     )]
     $PersistenceMethod = 'All',
      
@@ -222,6 +225,9 @@ function Find-AllPersistence
         [String]
         $VTEntries = $null
       )
+      
+      $Executable = Get-ExecutableFromCommandLine $Value
+      
       $PersistenceObject = [PSCustomObject]@{
         'Hostname' 			  = $Hostname
         'Technique'    		= $Technique
@@ -231,10 +237,10 @@ function Find-AllPersistence
         'Access Gained' 	= $AccessGained
         'Note'         		= $Note
         'Reference'    		= $Reference
-        'Signature'	  		= Find-CertificateInfo (Get-ExecutableFromCommandLine $Value)
-        'IsBuiltinBinary'	= Get-IfBuiltinBinary (Get-ExecutableFromCommandLine $Value)
-        'IsLolbin'			= Get-IfLolBin (Get-ExecutableFromCommandLine $Value)
-        'VTEntries'			= Get-IfHashIsMalicious(Get-ExecutableFromCommandLine $Value)
+        'Signature'	  		= Find-CertificateInfo $Executable
+        'IsBuiltinBinary'	= Get-IfBuiltinBinary $Executable
+        'IsLolbin'			= Get-IfLolBin $Executable
+        'VTEntries'			= Get-IfHashIsMalicious $Executable
       } 
       return $PersistenceObject
     }
@@ -277,9 +283,9 @@ function Find-AllPersistence
       # To get an updated list of lolbins 
       # curl https://lolbas-project.github.io/# | grep -E "bin-name\">(.*)\.exe<" -o | cut -d ">" -f 2 | cut -d "<" -f 1 
       [String[]]$lolbins = "APPINSTALLER.EXE", "ASPNET_COMPILER.EXE", "AT.EXE", "ATBROKER.EXE", "BASH.EXE", "BITSADMIN.EXE", "CERTOC.EXE", "CERTREQ.EXE", "CERTUTIL.EXE", "CMD.EXE", "CMDKEY.EXE", "CMDL32.EXE", "CMSTP.EXE", "CONFIGSECURITYPOLICY.EXE", "CONHOST.EXE", "CONTROL.EXE", "CSC.EXE", "CSCRIPT.EXE", "DATASVCUTIL.EXE", "DESKTOPIMGDOWNLDR.EXE", "DFSVC.EXE", "DIANTZ.EXE", "DISKSHADOW.EXE", "DNSCMD.EXE", "ESENTUTL.EXE", "EVENTVWR.EXE", "EXPAND.EXE", "EXPLORER.EXE", "EXTEXPORT.EXE", "EXTRAC32.EXE", "FINDSTR.EXE", "FINGER.EXE", "FLTMC.EXE", "FORFILES.EXE", "FTP.EXE", "GFXDOWNLOADWRAPPER.EXE", "GPSCRIPT.EXE", "HH.EXE", "IMEWDBLD.EXE", "IE4UINIT.EXE", "IEEXEC.EXE", "ILASM.EXE", "INFDEFAULTINSTALL.EXE", "INSTALLUTIL.EXE", "JSC.EXE", "MAKECAB.EXE", "MAVINJECT.EXE", "MICROSOFT.WORKFLOW.COMPILER.EXE", "MMC.EXE", "MPCMDRUN.EXE", "MSBUILD.EXE", "MSCONFIG.EXE", "MSDT.EXE", "MSHTA.EXE", "MSIEXEC.EXE", "NETSH.EXE", "ODBCCONF.EXE", "OFFLINESCANNERSHELL.EXE", "ONEDRIVESTANDALONEUPDATER.EXE", "PCALUA.EXE", "PCWRUN.EXE", "PKTMON.EXE", "PNPUTIL.EXE", "PRESENTATIONHOST.EXE", "PRINT.EXE", "PRINTBRM.EXE", "PSR.EXE", "RASAUTOU.EXE", "RDRLEAKDIAG.EXE", "REG.EXE", "REGASM.EXE", "REGEDIT.EXE", "REGINI.EXE", "REGISTER-CIMPROVIDER.EXE", "REGSVCS.EXE", "REGSVR32.EXE", "REPLACE.EXE", "RPCPING.EXE", "RUNDLL32.EXE", "RUNONCE.EXE", "RUNSCRIPTHELPER.EXE", "SC.EXE", "SCHTASKS.EXE", "SCRIPTRUNNER.EXE", "SETTINGSYNCHOST.EXE", "STORDIAG.EXE", "SYNCAPPVPUBLISHINGSERVER.EXE", "TTDINJECT.EXE", "TTTRACER.EXE", "VBC.EXE", "VERCLSID.EXE", "WAB.EXE", "WLRMDR.EXE", "WMIC.EXE", "WORKFOLDERS.EXE", "WSCRIPT.EXE", "WSRESET.EXE", "WUAUCLT.EXE", "XWIZARD.EXE", "ACCCHECKCONSOLE.EXE", "ADPLUS.EXE", "AGENTEXECUTOR.EXE", "APPVLP.EXE", "BGINFO.EXE", "CDB.EXE", "COREGEN.EXE", "CSI.EXE", "DEVTOOLSLAUNCHER.EXE", "DNX.EXE", "DOTNET.EXE", "DUMP64.EXE", "DXCAP.EXE", "EXCEL.EXE", "FSI.EXE", "FSIANYCPU.EXE", "MFTRACE.EXE", "MSDEPLOY.EXE", "MSXSL.EXE", "NTDSUTIL.EXE", "POWERPNT.EXE", "PROCDUMP(64).EXE", "RCSI.EXE", "REMOTE.EXE", "SQLDUMPER.EXE", "SQLPS.EXE", "SQLTOOLSPS.EXE", "SQUIRREL.EXE", "TE.EXE", "TRACKER.EXE", "UPDATE.EXE", "VSIISEXELAUNCHER.EXE", "VISUALUIAVERIFYNATIVE.EXE", "VSJITDEBUGGER.EXE", "WFC.EXE", "WINWORD.EXE", "WSL.EXE"
-      foreach($lolbin in ($lolbins)){
+      foreach($lolbin in $lolbins){
         $exe = Split-Path -path $executable -Leaf
-        if ($exe.ToUpper() -eq ($lolbin)) {
+        if (($exe.ToUpper()) -eq $lolbin) {
           return $true
         }
       }
@@ -343,11 +349,10 @@ function Find-AllPersistence
       }
       else
       {
-        Write-Host $pathName
         $path = $null
       }
       
-      if((Test-Path -Path $path -PathType leaf) -eq $false)
+      if(([System.IO.Path]::IsPathRooted($path)) -eq $false)
       {
         $path = (Get-Command $path).Source
       }
@@ -900,11 +905,11 @@ function Find-AllPersistence
           
           
           $exePath = $appPath.'(Default)'
-          if((Test-Path -Path $exePath -PathType leaf) -eq $false)
+          if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($exePath))) -eq $false)
           {
             $exePath = "C:\Windows\System32\$exePath"
           }
-          if ((Test-Path -Path $exePath -PathType leaf) -and ($exePath.Contains('powershell') -or $exePath.Contains('cmd') -or -not (Get-AuthenticodeSignature -FilePath $exePath ).IsOSBinary))
+          if ($exePath.Contains('powershell') -or $exePath.Contains('cmd') -or -not (Get-AuthenticodeSignature -FilePath $exePath ).IsOSBinary)
           { 
             Write-Verbose -Message "$hostname - [!] Found subkeys under the $(Convert-Path -Path $hive) App Paths key which deserve investigation!"
             $propPath = Convert-Path -Path $key.PSPath
@@ -946,7 +951,7 @@ function Find-AllPersistence
               if ($null -ne $ServiceDll)
               {
                 $dllPath = $ServiceDll
-                if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+                if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dllPath))) -eq $false)
                 {
                   $dllPath = "C:\Windows\System32\$dllPath"
                 }
@@ -977,7 +982,7 @@ function Find-AllPersistence
           $DllName = (Get-ItemProperty -Path ($key.pspath)).DllName
           if ($null -ne $DllName)
           {
-            if((Test-Path -Path $DllName -PathType leaf) -eq $false)
+            if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($DllName))) -eq $false)
             {
               $DllName = "C:\Windows\System32\$DllName"
             }
@@ -1024,7 +1029,7 @@ function Find-AllPersistence
           $dllPath = $dllLocation.Location
           if ($null -ne $dllPath)
           {
-            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dllPath))) -eq $false)
             {
               $dllPath = "C:\Windows\System32\$dllPath"
             }
@@ -1050,11 +1055,11 @@ function Find-AllPersistence
       $dllPath = $dllLocation.'(Default)'
       if ($null -ne $dllPath)
       {
-        if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+        if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dllPath))) -eq $false)
         {
           $dllPath = "C:\Windows\System32\$dllPath"
         }
-        if ((Test-Path -Path $dllPath -PathType leaf) -and -not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+        if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
         {
           Write-Verbose -Message "$hostname - [!] The DLL at $(Convert-Path -Path $hive)\CLSID\{52A2AAAE-085D-4187-97EA-8C30DB990436}\InprocServer32\(Default) is not an OS binary and deserves investigation!"
           $propPath = (Convert-Path -Path "$($dllLocation.pspath)") + '\(Default)'
@@ -1066,7 +1071,7 @@ function Find-AllPersistence
       else
       {
         $dllPath = "C:\Windows\System32\hhctrl.ocx"
-        if ((Test-Path -Path $dllPath -PathType Leaf) -and -not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
+        if (-not (Get-AuthenticodeSignature -FilePath $dllPath ).IsOSBinary)
         {
           Write-Verbose -Message "$hostname - [!] The DLL at $dllPath is not an OS binary and deserves investigation!"
           $propPath = (Convert-Path -Path "$($dllLocation.pspath)") + '\(Default)'
@@ -1084,15 +1089,18 @@ function Find-AllPersistence
       $userDirectories = Get-ChildItem -Path 'C:\Users\'
       foreach($directory in $userDirectories)
       {
-        $startupDirectory = Get-ChildItem -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" 
+        $fullPath = $directory.FullName
+        $startupDirectory = Get-ChildItem -Path "$fullPath\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" 
         foreach($file in $startupDirectory)
         {
-          Write-Verbose -Message "$hostname - [!] Found a file under $($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ folder!"
-          if(Get-IfSafeExecutable "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$file")
+          $relPath = $file.Name
+          Write-Verbose -Message "$hostname - [!] Found a file under $fullPath\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ folder!"
+          $safeCheck = Get-IfSafeExecutable "$fullPath\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$relPath"
+          if($safeCheck)
           {
             continue
           }          
-          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Startup Folder' -Classification 'MITRE ATT&CK T1547.001' -Path "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Value "$($directory.FullName)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$file" -AccessGained 'User' -Note "The executables under the \AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ of a user's folder are run every time that user logs in." -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Startup Folder' -Classification 'MITRE ATT&CK T1547.001' -Path "$fullPath\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Value "$fullPath\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$relPath" -AccessGained 'User' -Note "The executables under the .\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\ of a user's folder are run every time that user logs in." -Reference 'https://attack.mitre.org/techniques/T1547/001/'
           $null = $persistenceObjectArray.Add($PersistenceObject)
           $PersistenceObject
           $found = $true
@@ -1138,7 +1146,7 @@ function Find-AllPersistence
         if($autodialDll)
         {
           $dllPath = $autodialDll.AutodialDLL
-          if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+          if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dllPath))) -eq $false)
           {
             $dllPath = "C:\Windows\System32\$dllPath"
           }
@@ -1167,7 +1175,7 @@ function Find-AllPersistence
           foreach ($dll in $dlls)
           {
             $dllPath = $dll
-            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dllPath))) -eq $false)
             {
               $dllPath = "C:\Windows\System32\$dllPath"
             }
@@ -1194,7 +1202,7 @@ function Find-AllPersistence
         if($pluginDll)
         {
           $dllPath = $pluginDll.ServerLevelPluginDll
-          if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+          if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dllPath))) -eq $false)
           {
             $dllPath = "C:\Windows\System32\$dllPath"
           }
@@ -1279,9 +1287,9 @@ function Find-AllPersistence
             {
               continue
             }
-            if((Test-Path -Path $dllPath -PathType leaf) -eq $false)
+            if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($dll))) -eq $false)
             {
-              $dllPath = "C:\Windows\System32\$dllPath.dll"
+              $dll = "C:\Windows\System32\$dll.dll"
             }
             if ((Get-IfSafeLibrary $dllPath) -EQ $false)
             {
@@ -1333,11 +1341,11 @@ function Find-AllPersistence
         foreach($key in $explorerTools)
         {
           $path = ((Get-ItemProperty -Path Registry::$key -Name '(Default)').'(Default)'-split '\s+')[0] # split the path and take only the executable in case there are arguments
-          if((Test-Path -Path $path -PathType leaf) -eq $false)
+          if(('' -ne $path) -and ([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($path)) -eq $false))
           {
             $path = "C:\Windows\System32\$path.dll"
           }
-          if ((Test-Path -Path $path -PathType leaf) -and -not (Get-AuthenticodeSignature -FilePath $path ).IsOSBinary) 
+          if (-not (Get-AuthenticodeSignature -FilePath $path ).IsOSBinary) 
           {
             Write-Verbose -Message "$hostname - [!] Found an executable under a subkey of $(Convert-Path -Path $hive)\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer key which deserve investigation!"
             $propPath = Convert-Path -Path $key.PSPath
@@ -1587,7 +1595,7 @@ function Find-AllPersistence
         {
           $path = $path + '.dll'
         }
-        if((Test-Path -Path $path -PathType leaf) -eq $false) # if the DLL is specified without a path, assume it's under System32
+        if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($path))) -eq $false) # if the DLL is specified without a path, assume it's under System32
         {
           $path = "C:\Windows\System32\$path"
         }
@@ -1651,7 +1659,7 @@ function Find-AllPersistence
         $propPath = Convert-Path -Path $monitoredApp
         $propPath += '\MonitorProcess'
         $path = $monitoringApp
-        if((Test-Path -Path $path -PathType leaf) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
+        if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($path))) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
         {
           $path = (Get-Command $path).Source
         }
@@ -1671,7 +1679,7 @@ function Find-AllPersistence
       {
         $propPath = 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\TelemetryController\Command'
         $path = $telemetryController
-        if((Test-Path -Path $path -PathType leaf) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
+        if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($path))) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
         {
           $path = (Get-Command $path).Source
         }
@@ -1697,7 +1705,7 @@ function Find-AllPersistence
           }
           $propPath = 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\rdpwd\StartupPrograms'
           $path = $exe
-          if((Test-Path -Path $path -PathType leaf) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
+          if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($path))) -eq $false) # if the exe is specified without a path, try to get it with Get-Command
           {
             $path = (Get-Command $path).Source
           }
@@ -1809,6 +1817,74 @@ function Find-AllPersistence
           $PersistenceObject
         }
       }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-ExplorerContextMenu
+    {
+      Write-Verbose -Message "$hostname - Checking for Explorer Context Menu hijacking..."
+      $path = (Get-ItemProperty -Path "Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\{B7CDF620-DB73-44C0-8611-832B261A0107}" -Name '(Default)').'(Default)'
+      if($null -ne $path)
+      {  
+        if(([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($path))) -eq $false)
+        {
+          $path = "C:\Windows\System32\$path"
+        }
+      
+        Write-Verbose -Message "$hostname - [!] Found a DLL in the (Default) property of the 'HKCR:\AllFilesystemObjects\shellex\ContextMenuHandlers\{B7CDF620-DB73-44C0-8611-832B261A0107}' key which deserve investigation!"
+        $propPath = 'HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\{B7CDF620-DB73-44C0-8611-832B261A0107}\(Default)'
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Explorer Tools Hijacking' -Classification 'Uncatalogued Technique N.13' -Path $propPath -Value $path -AccessGained 'User' -Note 'DLLs in the (Default) property of the "HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\{B7CDF620-DB73-44C0-8611-832B261A0107}" key are run when the user right clicks any explorer Window.' -Reference 'https://ristbs.github.io/2023/02/15/hijack-explorer-context-menu-for-persistence-and-fun.html'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+      Write-Verbose -Message ''
+    }
+    
+    function Get-ServiceControlManagerSecurityDescriptor
+    {
+      Write-Verbose -Message "$hostname - Checking for manipulation of the security descriptor of the Service Control Manager..."
+      
+      $currentSDDL = (sc.exe sdshow scmanager) -join ''
+      $defaultSDDL = 'D:(A;;CC;;;AU)(A;;CCLCRPRC;;;IU)(A;;CCLCRPRC;;;SU)(A;;CCLCRPWPRC;;;SY)(A;;KA;;;BA)(A;;CC;;;AC)(A;;CC;;;S-1-15-3-1024-528118966-3876874398-709513571-1907873084-3598227634-3698730060-278077788-3990600205)S:(AU;FA;KA;;;WD)(AU;OIIOFA;GA;;;WD)'
+
+      if($defaultSDDL -eq $currentSDDL)
+      {
+        return
+      }
+
+      Write-Verbose -Message "$hostname - [!] It looks like the Security Descriptor of the Service Control Manager is not set to the default value and should be investigated."
+      $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Service Control Manager Security Descriptor Manipulation' -Classification 'Uncatalogued Technique N.14' -Path 'N/A' -Value $currentSDDL -AccessGained 'System' -Note 'The Service Control Manager is the software responsible for starting and stopping services in the Windows OS. If its ACL is loosely set, it would be possible for a non administrative process to start administrative processes by creating a service running with high or SYSTEM privileges.' -Reference 'https://pentestlab.blog/2023/03/20/persistence-service-control-manager/'
+      $null = $persistenceObjectArray.Add($PersistenceObject)
+      $PersistenceObject
+      Write-Verbose -Message ''
+    }
+    
+    function Get-MicrosoftOfficeAIHijacking
+    {
+      Write-Verbose -Message "$hostname - Checking for the hijacking of the Microsoft Office AI.exe executable..."
+      
+      $officex64Dir = [System.Environment]::ExpandEnvironmentVariables('%ProgramFiles%\Microsoft Office\root\')
+      
+      $officex86Dir = [System.Environment]::ExpandEnvironmentVariables('%PROGRAMFILES(X86)%\Microsoft Office\root\')
+      
+      $paths = @(Get-ChildItem $officex64Dir)
+      $paths += @(Get-ChildItem $officex86Dir)
+      
+      foreach($path in $paths)
+      {  
+        if((Test-Path -Path "$($path.FullName)\ai.exe") -eq $false)
+        {
+          continue
+        }
+      
+        Write-Verbose -Message "$hostname - [!] Found AI.exe under an Office path which deserve investigation!"
+        $propPath = $path.FullName
+        $exePath = "$($path.FullName)\ai.exe"
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Microsoft Office AI.exe Hijacking' -Classification 'Uncatalogued Technique N.15' -Path $propPath -Value $exePath -AccessGained 'User' -Note 'Office executables like WINWORD.exe look for AI.exe under the %ProgramFiles%\Microsoft Office\root\<Office Version> and %ProgramFiles(x86)%\Microsoft Office\root\<Office Version> directories. An attacker may place a malicious AI.exe there in order to have persistence whenever a user interacts with the Microsoft Office Suite.' -Reference 'https://twitter.com/laughing_mantis/status/1645268114966470662'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+        $PersistenceObject
+      }
+      Write-Verbose -Message ''
     }
 
     Write-Verbose -Message "$hostname - Starting execution..."
@@ -1854,6 +1930,10 @@ function Find-AllPersistence
       Get-BitsJobsNotifyCmdLine
       Get-Screensaver
       Get-PowerAutomate
+      Get-OfficeTemplates
+      Get-ExplorerContextMenu
+      Get-ServiceControlManagerSecurityDescriptor
+      Get-MicrosoftOfficeAIHijacking
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -2093,6 +2173,22 @@ function Find-AllPersistence
         'OfficeAddinsAndTemplates'
         {
           Get-OfficeTemplates
+          break
+        }
+        'ExplorerContextMenu'
+        {
+          Get-ExplorerContextMenu
+          break
+        }
+        'ServiceControlManagerSD'
+        {
+          Get-ServiceControlManagerSecurityDescriptor
+          break
+        }
+        'OfficeAiHijacking'
+        {
+          Get-MicrosoftOfficeAIHijacking
+          break
         }
       }
     }
@@ -2102,7 +2198,7 @@ function Find-AllPersistence
   
   if($ComputerName)
   {
-    Invoke-Command -ComputerName $ComputerName -ScriptBlock $ScriptBlock
+    Invoke-Command -ComputerName $ComputerName -ScriptBlock $ScriptBlock -ErrorAction Continue
   }
   else
   {
@@ -2143,11 +2239,13 @@ function Find-AllPersistence
   
   Write-Verbose -Message 'Script execution finished.'  
 }
+
+
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNxdEvsV28PafAaHt3pNrE1qx
-# m9CgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUNNZ5tIxOGN/6O9toRUpCGMqX
+# a1ugghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2247,17 +2345,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFP4126w50JqyELJcBelf
-# 1l3kjZZTMA0GCSqGSIb3DQEBAQUABIICADWgsnjKhqeDoBf65X3vln4JlvZ8R9PR
-# jwnzJNv9yUMB+Ke7iQZ2l52HYNr1oa/i5gdgrXeX0c77vBNqBVNwgv/CRj/DVcGx
-# 2P6bXcwGi3LjlEB+abeyQsofvleFLEcKfvw/+sFedr8BQtz1UynM8WBACZJQOJAc
-# 40lSh9V5pHot9Osbl7xlGa3aHsn6oAU9IKMV3aRcZABAhmVbOQtU8yHCb2mG99bz
-# CdMRECEUsh/MoRdZQd8sZM3Y3rDYc5QB+Jnqyvln7TDVM0uIR0HM+aytYF6zcFFB
-# 8fmqALX+wywu47zXAZgBImSQjQ9I8J4qiFEN7frCciQbRF4w+iiak8l51SQTuhtR
-# 60zrS88BZOfMkmoaxqRwb5FVL2zecAfKbgGxlhe8GFU/28DK5Ud2KBFHTXIwlKVY
-# zv5u07n8RSbT9S8v/VWURHDkySbGNaprdhB5W02/i1ZcT2+bEAOpXSbHqwHM2HL8
-# 5cKA39+UKbKZkp/D/Qnoq5/6wNYTgLitYhnJb26NwOVdJXrVjjZ5WiAb7g5iez2d
-# GjODiFr9hSpEa6qUI7f9EFD6Ae0NkFy+3wQIZjyEeUxO99KUeg18N4IkF9gTvyb6
-# 8OJ97Xibe5jkcEiBFzpRxrKcRjheI1Klj6jBWh/gcTOWFeX/HgxWr6vks5Nm8kgx
-# BlrCTb7JlEm1
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFFk7DRybK9ZcX0eAZOlT
+# y/recT8QMA0GCSqGSIb3DQEBAQUABIICABalB9xxcKtfGJGA7OjJDIBtlqkPNgC5
+# bIhzlz+3zskVQ4ZuZrePUsFk9tn7JA+hHPQ2Fmpzl5WpRcM6D5+AL7830m6cFxjm
+# Wflg8oSZEps1DN4vdUbLeNFbGsanTezyLYWbCNjspeBQrOZLQD9dMYIE13biuVnw
+# /Q42j0gGHcT5xFvNUBDYHpiPOsKZeQLg6Y9iAuL/sXJGWOYZjzxZFs+u4ZZDOOZc
+# rVvD2J/468VMDMO6rrcirS/iFnNBZOeqNT24W7I3ytuuB5DYJBX6vRBPw7QL4hg6
+# ckZbKEfx9AlIz8CafRdU+MS1X7PVChXMEnE99rdDOte2D8QEaDIgLcPVp623cGiT
+# 01G0J5pZDlUBG+mHhRdM99XHLI9+iG+U13zIzZd7TpJ1RVXhW2YtaDqS885YJnoB
+# R/Tjf30PNn952iS18DF1xppFuhCZBBpwaxTu/VL8LRghEvlBpgTR+TQzV7uUDu5k
+# 198m2Jg5DJZSoiOeSwzWtl3N/bCdkZM7M32EkPdUXl24/SzRBoQGzPcU4ggovc02
+# /MejZdmjPoHroWDAGQk/r7meTc23AmnCuoHqlAqbHQUar+VVHryzFjTx3QuWl53c
+# oS3QFNmG6V0H0HjoaPGHRkVce3qHtrCBUmTR2mhWDMdW3KeI/nqHRPUDvvn1brLx
+# XSqXfFt9FwWr
 # SIG # End signature block

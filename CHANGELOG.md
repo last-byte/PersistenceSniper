@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.0
+Features:
+   - Detection for Office AI.exe hijacking
+   - Detection for Service Control Manager Security Descriptor tampering
+   - Detection for Explorer Context Menu hijacking
+Fixes:
+   - Fixed handling of system environment variables in the registry
+   - Fixed the bug in which the script blocked if one of the remote computers was not reachable
+
+
 ## 1.9.3
 Features:
    - Added the possibility of passing a Virustotal API key and check if the hash of the detected file is known.
