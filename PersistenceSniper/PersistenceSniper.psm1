@@ -35,8 +35,12 @@
 
 #Requires -RunAsAdministrator
 
+Import-Module "$PSScriptRoot\Modules\OutputManager\OutputManager.psd1"
+
 function Find-AllPersistence
 { 
+  
+
   <#
       .SYNOPSIS
       Find-AllPersistence is PersistenceSniper's main function. All the other functions defined in it are used by Find-AllPersistence to gather information on potential persistence techniques implanted on the machines PersistenceSniper is run on.
@@ -161,18 +165,24 @@ function Find-AllPersistence
     [Parameter(Position = 3)]
     [Switch]
     $IncludeHighFalsePositivesChecks,
-        
+    
     [Parameter(Position = 4)]
-    [String]
-    $OutputCSV = $null, 
+    [ValidateSet("CSV", "JSON")]
+    [string]$LogType,
 
     [Parameter(Position = 5)]
+    [String]
+    $Destination = $null, 
+
+    [Parameter(Position = 6)]
     [String]
     $VTApiKey = $null 
   )
   
   $ScriptBlock = 
   {
+
+    
     $ErrorActionPreference = 'SilentlyContinue'
     $VerbosePreference = $Using:VerbosePreference
     $hostname = ([Net.Dns]::GetHostByName($env:computerName)).HostName
@@ -2230,11 +2240,10 @@ function Find-AllPersistence
     $persistenceObjectArray = $newPersistenceObjectArray.Clone()
   }
   
-  if($OutputCSV)
+  if($Destination -and $LogType)
   {
-    $persistenceObjectArray |
-    ConvertTo-Csv |
-    Out-File -FilePath $OutputCSV -ErrorAction Stop
+    #Write-Host $Destination
+    Write-Log -LogType $LogType -Destination $Destination -Results $persistenceObjectArray
   }
   
   Write-Verbose -Message 'Script execution finished.'  
