@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.10.1
+Fixes:
+   - Fixed a bug which prevented -DiffCSV from working as intended.
+
+
 ## 1.10.0
 Features:
    - Detection for Office AI.exe hijacking
