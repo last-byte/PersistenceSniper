@@ -1,12 +1,12 @@
 <#PSScriptInfo
 
-    .VERSION 1.10.1
+    .VERSION 1.11.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
     .AUTHOR Federico @last0x00 Lagrasta
 
-    .DESCRIPTION This module tries to enumerate all the persistence methods implanted on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the script didn't find anything the machine is clean.
+    .DESCRIPTION This module tries to enumerate all the persistence methods implanted on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the module didn't find anything the machine is clean.
 
     .COMPANYNAME @APTortellini
 
@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This release fixes a bug that prevented -DiffCSV from working as intended.
+    This release fixes a bug in the CmdAutoRun detection and also implements detection for RunEx registry keys, RunOnceEx registry keys, and .NET startup hooks.
 
     .PRIVATEDATA
 
@@ -146,7 +146,9 @@ function Find-AllPersistence
         'Services',
         'ExplorerContextMenu',
         'ServiceControlManagerSD',
-        'OfficeAiHijacking'
+        'OfficeAiHijacking',
+        'RunExAndRunOnceEx',
+        'DotNetStartupHooks'
     )]
     $PersistenceMethod = 'All',
      
@@ -421,12 +423,11 @@ function Find-AllPersistence
               $access = 'User'
             }
             
-            #$exePath = Get-ExecutableFromPath($runProps.($prop.Name))
             if(Get-IfSafeExecutable $runProps.($prop.Name))
             {
               continue
             }
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in.' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry Run Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\Run are run when the user logs in or when the machine boots up (in the case of the HKLM hive).' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
             $null = $persistenceObjectArray.Add($PersistenceObject)
           }
         }
@@ -461,7 +462,7 @@ function Find-AllPersistence
             {
               continue
             }
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnce Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of the key (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce are run once when the user logs in, or when the machine boots up (in the case of the HKLM hive), and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
             $null = $persistenceObjectArray.Add($PersistenceObject)
           }
         }
@@ -686,31 +687,15 @@ function Find-AllPersistence
       Write-Verbose -Message "$hostname - Getting Command Processor's AutoRun property..."
       foreach($hive in $systemAndUsersHives)
       {
-        $autorun = Get-ItemProperty -Path "$hive\Software\Microsoft\Command Processor" -Name AutoRun 
+        $autorun = (Get-ItemProperty -Path "$hive\Software\Microsoft\Command Processor" -Name AutoRun).AutoRun
         if($autorun)
         {
           Write-Verbose -Message "$hostname - [!] $(Convert-Path -Path $hive) Command Processor's AutoRun property is set and deserves investigation!"
-          foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $autorun))
-          {
-            if($psProperties.Contains($prop.Name)) { continue } # skip the property if it's powershell built-in property
-            $propPath = Convert-Path -Path $autorun.PSPath
-            $propPath += '\' + $prop.Name
-            $currentHive = Convert-Path -Path $hive
-            if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
-            {
-              $access = 'System'
-            }
-            else
-            {
-              $access = 'User'
-            }
-            if(Get-IfSafeExecutable $autorun.($prop.Name))
-            {
-              continue
-            }
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Command Processor AutoRun key' -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun.($prop.Name) -AccessGained $access -Note 'The executable in the AutoRun property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
-            $null = $persistenceObjectArray.Add($PersistenceObject)
-          }
+          $propPath = Convert-Path -Path $hive
+          $propPath += "\Software\Microsoft\Command Processor\AutoRun"
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Command Processor AutoRun key' -Classification 'Uncatalogued Technique N.1' -Path $propPath -Value $autorun -AccessGained 'User' -Note 'The executable in the AutoRun property of (HKLM|HKEY_USERS\<SID>)\Software\Microsoft\Command Processor\AutoRun is run when cmd.exe is spawned without the /D argument.' -Reference 'https://persistence-info.github.io/Data/cmdautorun.html'
+          $null = $persistenceObjectArray.Add($PersistenceObject)
+          
         }
       }
       Write-Verbose -Message ''   
@@ -1832,6 +1817,126 @@ function Find-AllPersistence
       }
       Write-Verbose -Message ''
     }
+    
+    function Get-RunExAndRunOnceEx
+    {
+      Write-Verbose -Message "$hostname - Getting Run properties..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $runKeys = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\RunEx"
+        foreach($key in $runKeys)
+        {
+          Write-Verbose -Message "$hostname - [!] Found keys under $(Convert-Path -Path $hive)'s RunEx key which deserve investigation!"
+          $runProps = Get-ItemProperty -Path $key.PSPath 
+          if($runProps)
+          {
+            Write-Verbose -Message "$hostname - [!] Found properties under a key in $(Convert-Path -Path $hive)'s RunEx key which deserve investigation!"
+            foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $runProps))
+            {
+              if($psProperties.Contains($prop.Name)) 
+              {
+                continue
+              } # skip the property if it's powershell built-in property
+              $propPath = Convert-Path -Path $runProps.PSPath
+              $propPath += '\' + $prop.Name
+              $currentHive = Convert-Path -Path $hive
+              if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+              {
+                $access = 'System'
+              }
+              else
+              {
+                $access = 'User'
+              }
+            
+              if(Get-IfSafeExecutable $runProps.($prop.Name))
+              {
+                continue
+              }
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunEx Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of any key under the (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunEx key are run when the user logs in or when the machine boots up (in the case of the HKLM hive).' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+            }
+          }
+        }
+      }
+    
+      Write-Verbose -Message ''
+      Write-Verbose -Message "$hostname - Getting RunOnce properties..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $runOnceKeys = Get-ChildItem -Path "$hive\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx"
+        foreach($key in $runOnceKeys)
+        {
+          Write-Verbose -Message "$hostname - [!] Found keys under $(Convert-Path -Path $hive)'s RunOnceEx key which deserve investigation!"
+          $runOnceProps = Get-ItemProperty -Path $key.PSPath
+         
+          if($runOnceProps)
+          {
+            Write-Verbose -Message "$hostname - [!] Found properties under a key in $(Convert-Path -Path $hive)'s RunOnceEx key which deserve investigation!"
+            foreach ($prop in (Get-Member -MemberType NoteProperty -InputObject $runOnceProps))
+            {
+              if($psProperties.Contains($prop.Name)) 
+              {
+                continue
+              } # skip the property if it's powershell built-in property
+              $propPath = Convert-Path -Path $runOnceProps.PSPath
+              $propPath += '\' + $prop.Name
+              $currentHive = Convert-Path -Path $hive
+              if(($currentHive -eq 'HKEY_LOCAL_MACHINE') -or ($currentHive -eq 'HKEY_USERS\S-1-5-18') -or ($currentHive -eq 'HKEY_USERS\S-1-5-19') -or ($currentHive -eq 'HKEY_USERS\S-1-5-20'))
+              {
+                $access = 'System'
+              }
+              else
+              {
+                $access = 'User'
+              }
+              if(Get-IfSafeExecutable $runOnceProps.($prop.Name))
+              {
+                continue
+              }
+              $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Registry RunOnceEx Key' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $runOnceProps.($prop.Name) -AccessGained $access -Note 'Executables in properties of any key under the (HKLM|HKEY_USERS\<SID>)\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx key are run when the user logs in or when the machine boots up (in the case of the HKLM hive), and then deleted.' -Reference 'https://attack.mitre.org/techniques/T1547/001/' 
+              $null = $persistenceObjectArray.Add($PersistenceObject)
+            }
+          }
+        }
+      }
+      Write-Verbose -Message ''
+    }
+    function Get-DotNetStartupHooks
+    {
+      Write-Verbose -Message "$hostname - Getting DotNet Startup Hooks..."
+      foreach($hive in $systemAndUsersHives)
+      {
+        $dotnetHooks = (Get-ItemProperty -Path "$hive\Environment" -Name DOTNET_STARTUP_HOOKS).DOTNET_STARTUP_HOOKS
+        if($dotnetHooks)
+        {
+          $dotnetHooks = $dotnetHooks -split ';'
+        }
+        foreach($hook in $dotnetHooks)
+        {
+          Write-Verbose -Message "$hostname - [!] Found a .NET hook in the DOTNET_STARTUP_HOOKS property in the $(Convert-Path -Path $hive)\Environment key!"
+          $propPath = Convert-Path -Path $hive
+          $propPath += "\Environment\DOTNET_STARTUP_HOOKS"
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique '.NET Startup Hooks DLL Sideloading' -Classification 'MITRE ATT&CK T1574.002' -Path $propPath -Value $hook -AccessGained 'User/System' -Note 'The .NET DLLs listed in the DOTNET_STARTUP_HOOKS environment variable are loaded into .NET processes at runtime.' -Reference 'https://persistence-info.github.io/Data/dotnetstartuphooks.html'
+          $null = $persistenceObjectArray.Add($PersistenceObject) 
+        }
+      }
+      
+      $systemHooks = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name DOTNET_STARTUP_HOOKS).DOTNET_STARTUP_HOOKS
+      if($systemHooks)
+      {
+        $systemHooks = $systemHooks -split ';'
+      }
+      foreach($hook in $systemHooks)
+      {
+        Write-Verbose -Message "$hostname - [!] Found a .NET hook in the DOTNET_STARTUP_HOOKS property in the $(Convert-Path -Path $hive)\Environment key!"
+        $propPath = "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique '.NET Startup Hooks DLL Sideloading' -Classification 'MITRE ATT&CK T1574.002' -Path $propPath -Value $hook -AccessGained 'User/System' -Note 'The .NET DLLs listed in the DOTNET_STARTUP_HOOKS environment variable are loaded into .NET processes at runtime.' -Reference 'https://persistence-info.github.io/Data/dotnetstartuphooks.html'
+        $null = $persistenceObjectArray.Add($PersistenceObject) 
+      }
+      
+      Write-Verbose -Message ''   
+    }
 
     Write-Verbose -Message "$hostname - Starting execution..."
 
@@ -1880,6 +1985,8 @@ function Find-AllPersistence
       Get-ExplorerContextMenu
       Get-ServiceControlManagerSecurityDescriptor
       Get-MicrosoftOfficeAIHijacking
+      Get-RunExAndRunOnceEx
+      Get-DotNetStartupHooks
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -2136,6 +2243,16 @@ function Find-AllPersistence
           Get-MicrosoftOfficeAIHijacking
           break
         }
+        'RunExAndRunOnceEx'
+        {
+          Get-RunExAndRunOnceEx
+          break
+        }
+        'DotNetStartupHooks'
+        {
+          Get-DotNetStartupHooks
+          break
+        }
       }
     }
     
@@ -2181,7 +2298,7 @@ function Find-AllPersistence
   if($OutputCSV)
   {
     $persistenceObjectArray |
-    ConvertTo-Csv |
+    ConvertTo-Csv -NoTypeInformation |
     Out-File -FilePath $OutputCSV -ErrorAction Stop
   }
   
@@ -2190,8 +2307,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSWm6K/Syoo/aKYVLMzU2HrkG
-# o/WgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUxptSiaScHxSSROvrAgTduUX6
+# 5W6gghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2291,17 +2408,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFN5t9DqFOYEzZ5M7sTvS
-# Fn0FuRPEMA0GCSqGSIb3DQEBAQUABIICADejGaPXn0DNRKT7wb7+jrQNX1HdbSVL
-# m7Q0sqOMKxfKWD7j29GPZ4Uk8dYqFhKXC22wkGjDqgQxjQiMVKhMxsyTsGBjeGod
-# B8hD0sBoD8eEJjhtKFsnBKy932QhubpHPEeehY4Dtj9jFfz/KKDe/f5hfxAZcsPm
-# 1+MNms6n/dfvTvr4zwRaqiYBjbCW2O7wI5hbU69zX9KkPJe5G+yTCSNwbrycxtoY
-# zd2qDdVxsAYoCJrWuYaB3y8o3V3ej8Gutml6AkCuLYlLLKDZF1tFxEOLEwIpHWxC
-# d5bnv9NMsIw6X+Zv2LqnnWotyhnj4TR982Dme4kDSRqvFQ9knGEUX663PeTqqrSk
-# oGSpFr744maa0U4YIC41IFGjvUkrhZJC4ThHXGS4O3y1kxL3uKvRUsnmnFLj6Dm1
-# +OZ7pgsMpe2EUPvf6gSv8LZRImdYXZ4LiHg+55Z5NEdJY64djBS8vEUTqmPtzv+0
-# VEa2vulhkULSCmTfZrUYgHcqmpliDY6nmPOlKFIHM2CBKcskAJAIf1wPj8pJR/i9
-# PYQrMiBaKm7TXaY0cisVMT4O2iNEyPRBYofxbitgUs0A5p0xGXgpLBHsS4QTGoPH
-# IIOUQ0UsV+llCwQLhJE+CkSAXoqR7+OaMpXrxTCpUVuforjcw9UZWJXgV2hiBtls
-# DkFgiBKXcMg7
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFETYvxSCz6qcN7byu89C
+# 9eOnATamMA0GCSqGSIb3DQEBAQUABIICABrcJJB+T8GLjOnphy7COyFe7Xdl0t0n
+# g75+iSNhnPqgFRFpJMNGkqK/D5jiwH9bxORvlB0uFFWzmpjy+vu5SjCQpzjAVZy9
+# V9+TiRyY9YhL3Lul4qRu/0uYoWN9v4SQ+Sg3JzfM2rZ1RZdXpHRTuweO1SQZaLDf
+# xQdFqm/eJBsx4YF6u5UwlusAfuFZAa+o9EkXPusSZWzssOKfQL3tSaxH10QXhqN6
+# wD0+O+MXJCC5B2MW8EP9LrEDNMFcK/gZAHKq4uwtSYor1KdJ58ji7o3FJc2yvSV7
+# 1Lvt+VV6TjjJErQ/mHi7rXj38ZyWE53cqaKRcLI/1jEsJ3+Wmj7YLwVBKgMfAXKP
+# N8/v+rdJWZYGPkqayH+9g/nosxr1ALdrtndf18g0kmJHycPn2giBDLurN396ogPN
+# SrbJvrpIqZMArgMR6TmPzzkCRIyDp/A7kwFdSS/K8BzAMAlJL34g6LvuPqYl/TUU
+# //NDDnUMLeGvBfMdfU6udPpG0qctNoc3Im8eb1G3/ZS6FpsS6MDKbOcCxBz0ufyL
+# exLUULtCaNN6VRCOe4lslfSzOWMT5rK4p9u5PR1dWi9JcTHL+K8hcgAVCPt3+neq
+# jH+nrs/b23iRxfxDlx7MadIP537FgSTRSbpaueSIT6wvWogkqdhEYe9p2U0NrxvZ
+# mjinMoZnc5+W
 # SIG # End signature block
