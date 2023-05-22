@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.11.0
+    .VERSION 1.12.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This release fixes a bug in the CmdAutoRun detection and also implements detection for RunEx registry keys, RunOnceEx registry keys, and .NET startup hooks.
+    This release fixes a bug in the OutputCSV parameter, which up to version 1.11.0 would included false positives filtered out by the DiffCSV parameter, as well as implementing support for logging the output of the tool to the Windows Event Log.
 
     .PRIVATEDATA
 
@@ -74,6 +74,10 @@ function Find-AllPersistence
       .EXAMPLE
       Find-AllPersistence -OutputCSV .\persistences.csv
       Enumerate low false positive persistence techniques implanted on the local machine and output to a CSV.
+
+      .EXAMPLE
+      Find-AllPersistence -LogFindings
+      Enumerate low false positive persistence techniques implanted on the local machine and log results to the Windows Event Log.
 
       .EXAMPLE
       Find-AllPersistence -DiffCSV .\persistences.csv
@@ -170,17 +174,24 @@ function Find-AllPersistence
 
     [Parameter(Position = 5)]
     [String]
-    $VTApiKey = $null 
+    $VTApiKey = $null,
+    
+    [Parameter(Position = 6)]
+    [Switch]
+    $LogFindings
   )
+  
+  # This array will hold all the persistence techniques found on all the machines the module is run on
+  $globalPersistenceObjectArray = [Collections.ArrayList]::new()
   
   $ScriptBlock = 
   {
     $ErrorActionPreference = 'SilentlyContinue'
     $VerbosePreference = $Using:VerbosePreference
     $hostname = ([Net.Dns]::GetHostByName($env:computerName)).HostName
-    $script:psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
-    $script:persistenceObjectArray = [Collections.ArrayList]::new()
-    $script:systemAndUsersHives = [Collections.ArrayList]::new()
+    $psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
+    $persistenceObjectArray = [Collections.ArrayList]::new()
+    $systemAndUsersHives = [Collections.ArrayList]::new()
     $systemHive = (Get-Item Registry::HKEY_LOCAL_MACHINE).PSpath
     $null = $systemAndUsersHives.Add($systemHive)
     $sids = Get-ChildItem Registry::HKEY_USERS 
@@ -1937,6 +1948,100 @@ function Find-AllPersistence
       
       Write-Verbose -Message ''   
     }
+    
+    function Out-EventLog 
+    {
+
+      Param (
+
+        [Parameter(Mandatory = $true)]
+        [Collections.ArrayList]$Findings
+
+      )
+
+      Begin {
+        $EventIDMapping = @{
+          'Registry Run Key'                                          = $null
+          'Registry RunOnce Key'                                      = $null
+          'Image File Execution Options'                              = $null
+          'Natural Language Development Platform 6 DLL Override Path' = $null
+          'AEDebug Custom Debugger'                                   = $null
+          'Wow6432Node AEDebug Custom Debugger'                       = $null
+          'Windows Error Reporting Debugger'                          = $null
+          'Windows Error Reporting ReflectDebugger'                   = $null
+          'Command Processor AutoRun key'                             = $null
+          'Explorer Load Property'                                    = $null
+          'Winlogon Userinit Property'                                = $null
+          'Winlogon Shell Property'                                   = $null
+          'Windows Terminal startOnUserLogin'                         = $null
+          'AppCertDlls'                                               = $null
+          'App Paths'                                                 = $null
+          'ServiceDll Hijacking'                                      = $null
+          'Group Policy Extension DLL'                                = $null
+          'Winlogon MPNotify Executable'                              = $null
+          'CHM Helper DLL'                                            = $null
+          'Hijacking of hhctrl.ocx'                                   = $null
+          'Startup Folder'                                            = $null
+          'User Init Mpr Logon Script'                                = $null
+          'AutodialDLL Winsock Injection'                             = $null
+          'LSA Extensions DLL'                                        = $null
+          'ServerLevelPluginDll DNS Server DLL Hijacking'             = $null
+          'LSA Password Filter DLL'                                   = $null
+          'LSA Authentication Package DLL'                            = $null
+          'LSA Security Package DLL'                                  = $null
+          'Winlogon Notification Package'                             = $null
+          'Explorer Tools Hijacking'                                  = $null
+          'DbgManagedDebugger Custom Debugger'                        = $null
+          'Wow6432Node DbgManagedDebugger Custom Debugger'            = $null
+          'ErrorHandler.cmd Hijacking'                                = $null
+          'WMI Event Subscription'                                    = $null
+          'Windows Service'                                           = $null
+          'Power Automate'                                            = $null
+          'Terminal Services InitialProgram'                          = $null
+          'Accessibility Tools Backdoor'                              = $null
+          'Fake AMSI Provider'                                        = $null
+          'Powershell Profile'                                        = $null
+          'Silent Process Exit Monitor'                               = $null
+          'Telemetry Controller Command'                              = $null
+          'RDP WDS Startup Programs'                                  = $null
+          'Scheduled Task'                                            = $null
+          'BITS Job NotifyCmdLine'                                    = $null
+          'Suspicious Screensaver Program'                            = $null
+          'Office Application Startup'                                = $null
+          'Service Control Manager Security Descriptor Manipulation'  = $null
+          'Microsoft Office AI.exe Hijacking'                         = $null
+        }
+
+        # Collect the keys in a separate list
+        $keys = $EventIDMapping.Keys | ForEach-Object { $_ }
+
+        $i = 1000
+        foreach ($key in $keys) {
+          $EventIDMapping[$key] = $i
+          $i++
+        }
+      }
+
+      Process {
+        $evtlog = "Application"
+        $source = "PersistenceSniper"
+
+
+        if ([System.Diagnostics.EventLog]::SourceExists($source) -eq $false) {
+          [System.Diagnostics.EventLog]::CreateEventSource($source, $evtlog)
+        }
+
+        foreach ($finding in $Findings) {
+          $evtID = $EventIDMapping[$finding.technique]
+          $id = New-Object System.Diagnostics.EventInstance($evtID, 1) # Info Event
+          $propertiesValue = $finding.PSObject.Properties | Select-Object -ExpandProperty Value
+          $evtObject = New-Object System.Diagnostics.EventLog
+          $evtObject.Log = $evtlog
+          $evtObject.Source = $source
+          $evtObject.WriteEvent($id, $propertiesValue)
+        }
+      }
+    }
 
     Write-Verbose -Message "$hostname - Starting execution..."
 
@@ -2256,32 +2361,19 @@ function Find-AllPersistence
       }
     }
     
-    Write-Verbose -Message "$hostname - Execution finished, outputting results..."
-    # Use Input CSV to make a diff of the results and only show us the persistences implanted on the local machine which are not in the CSV
-    if($DiffCSV)
+    if($LogFindings.IsPresent)
     {
-      Write-Verbose -Message 'Diffing found persistences with the ones in the input CSV...'
-      $importedPersistenceObjectArray = Import-Csv -Path $DiffCSV -ErrorAction Stop
-      $newPersistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
-      foreach($localPersistence in $persistenceObjectArray)
-      {
-        $found = $false
-        foreach($importedPersistence in $importedPersistenceObjectArray)
-        {
-          if(($importedPersistence.Technique -eq $localPersistence.Technique) -and ($importedPersistence.Path -eq $localPersistence.Path) -and ($importedPersistence.Value -eq $localPersistence.Value))
-          {
-            $found = $true
-            break
-          }
-        }
-        if($found -eq $false)
-        {
-          $null = $newPersistenceObjectArray.Add($localPersistence)
-        }
-      }
-      $persistenceObjectArray = $newPersistenceObjectArray.Clone()
+      Write-Verbose -Message "$hostname - You have used the -LogFindings switch, what's been found on the machine will be saved in the Event Log."
+      Out-EventLog $persistenceObjectArray
     }
-    $persistenceObjectArray
+    
+    # Save all the techniques found on this machine in the global array.
+    foreach($finding in $persistenceObjectArray)
+    {
+      $null = $globalPersistenceObjectArray.Add($finding)
+    }
+    
+    Write-Verbose -Message "$hostname - Execution finished, outputting results..."
   }
   
   if($ComputerName)
@@ -2294,21 +2386,51 @@ function Find-AllPersistence
   }
   
   
+  # Use input CSV to make a diff of the results and only show us the persistences implanted on the machine which are not in the CSV
+  if($DiffCSV)
+  {
+    Write-Verbose -Message 'Diffing found persistences with the ones in the input CSV...'
+    $importedPersistenceObjectArray = Import-Csv -Path $DiffCSV -ErrorAction Stop
+    $newPersistenceObjectArray = New-Object -TypeName System.Collections.ArrayList
+    foreach($localPersistence in $globalPersistenceObjectArray)
+    {
+      $found = $false
+      foreach($importedPersistence in $importedPersistenceObjectArray)
+      {
+        if(($importedPersistence.Technique -eq $localPersistence.Technique) -and ($importedPersistence.Path -eq $localPersistence.Path) -and ($importedPersistence.Value -eq $localPersistence.Value))
+        {
+          $found = $true
+          break
+        }
+      }
+      if($found -eq $false)
+      {
+        $null = $newPersistenceObjectArray.Add($localPersistence)
+      }
+    }
+    $globalPersistenceObjectArray = $newPersistenceObjectArray.Clone()
+  }
   
   if($OutputCSV)
   {
-    $persistenceObjectArray |
+    $globalPersistenceObjectArray |
     ConvertTo-Csv -NoTypeInformation |
     Out-File -FilePath $OutputCSV -ErrorAction Stop
   }
+  else
+  {
+    # Output the final result to stdin
+    $globalPersistenceObjectArray
+  }
   
-  Write-Verbose -Message 'Script execution finished.'  
+  Write-Verbose -Message 'Module execution finished.'  
 }
+
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUxptSiaScHxSSROvrAgTduUX6
-# 5W6gghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUugbqmFxTxEfYG1PWUjAJKz+X
+# OoWgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2408,17 +2530,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFETYvxSCz6qcN7byu89C
-# 9eOnATamMA0GCSqGSIb3DQEBAQUABIICABrcJJB+T8GLjOnphy7COyFe7Xdl0t0n
-# g75+iSNhnPqgFRFpJMNGkqK/D5jiwH9bxORvlB0uFFWzmpjy+vu5SjCQpzjAVZy9
-# V9+TiRyY9YhL3Lul4qRu/0uYoWN9v4SQ+Sg3JzfM2rZ1RZdXpHRTuweO1SQZaLDf
-# xQdFqm/eJBsx4YF6u5UwlusAfuFZAa+o9EkXPusSZWzssOKfQL3tSaxH10QXhqN6
-# wD0+O+MXJCC5B2MW8EP9LrEDNMFcK/gZAHKq4uwtSYor1KdJ58ji7o3FJc2yvSV7
-# 1Lvt+VV6TjjJErQ/mHi7rXj38ZyWE53cqaKRcLI/1jEsJ3+Wmj7YLwVBKgMfAXKP
-# N8/v+rdJWZYGPkqayH+9g/nosxr1ALdrtndf18g0kmJHycPn2giBDLurN396ogPN
-# SrbJvrpIqZMArgMR6TmPzzkCRIyDp/A7kwFdSS/K8BzAMAlJL34g6LvuPqYl/TUU
-# //NDDnUMLeGvBfMdfU6udPpG0qctNoc3Im8eb1G3/ZS6FpsS6MDKbOcCxBz0ufyL
-# exLUULtCaNN6VRCOe4lslfSzOWMT5rK4p9u5PR1dWi9JcTHL+K8hcgAVCPt3+neq
-# jH+nrs/b23iRxfxDlx7MadIP537FgSTRSbpaueSIT6wvWogkqdhEYe9p2U0NrxvZ
-# mjinMoZnc5+W
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFHfTU0Eir/IBnx9L6hLm
+# 0JHi0W3fMA0GCSqGSIb3DQEBAQUABIICADK2HY6lw6970xC4OLr+6Qhmih5MeNnI
+# 0HW9FxZwPCCni6fsYQBCWMJUhwWTIvcklySPcavrUZT1DfWNjJFPJVjdhAKkHJGI
+# nyfKEmPK7k8MM9fqgvPE4BBoHTZdRDB+OgbBdHTtk2qpYdl25MPZrbFgAGi3Wq1K
+# T//LrDGNzB0KfVgSKt95wwEMQjxFY/4vCy03MMbBGvjI1PmxjocmONGY9p1HSLgK
+# /Jt+vmEhkQMHxiScMyuxeNzpUc4V0R8YnHXGnaEsiW2J+kEu8iV2D2fxCe1HiYTI
+# RImP119+mhzqGpkiaKvzKee51VSULTpn/7ZrjEoDLlnaGYPqWt9srJ40C7r6Na6N
+# Bx3M6MYEd76e6iv8MQbAQkRZXwbsNV+lQnpDhsAvRuw3C7u0Rj3XMK+h/tDOf/EG
+# mBwXYtiUyhwpX8QDdA180/M8jL8GqUQuMc+zc8RBML3UfnnAVpV0dqbp/311plnR
+# 7lFVnDDs6MUUdMWOqsZIDObuYMB+6G3/q4DlJjyclVbSnIvlyECSdZNoFQvA+mzP
+# DIjkXn2XfWZ7XePCTexaHNrWpy4iTEQsWrHVENc3dGlYuCHj0nJjNTXvUxJy4Gmv
+# ytFfkDxqWWwlFxxXCsa8cffpPIlHuuJMZkeE8HV8C0IEO2OrNTyoY7jSaFMHMCOV
+# wm5IArd9nElv
 # SIG # End signature block

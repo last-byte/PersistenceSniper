@@ -1,4 +1,9 @@
 # Changelog
+## 1.12.0
+Features:
+   - Save results to the local Windows Event Log
+Fixes:
+   - Fixed a bug which saw OutputCSV contain the techniques that should have been filtered out by DiffCSV.
 
 ## 1.11.0
 Features:

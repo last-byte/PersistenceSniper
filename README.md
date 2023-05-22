@@ -88,6 +88,7 @@ As already introduced, `Find-AllPersistence` outputs an array of Powershell Cust
 - IsLolbin: this boolean property is set to True if the the binary associated with the persistence technique found is a [LOLBin](https://lolbas-project.github.io/);
 - VTEntries: this property will be populated if the parameter `-VTApiKey` is present; a value different from "N/A" will indicate that the identified file is known and has zero or more detections.
 
+Thanks to [Antonio Blescia](https://github.com/ablescia) `Find-AllPersistence` now supports the `-LogFindings` parameter, which saves the output of the tool in the Windows Event Log, under `Windows Logs\Application` with source `PersistenceSniper`.
 
 ## Dealing with false positives
 Let's face it, hunting for persistence techniques also comes with having to deal with a lot of false positives. This happens because, while some techniques are almost never legimately used, many indeed are by legit software which needs to autorun on system boot or user login.
