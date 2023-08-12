@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.12.0
+    .VERSION 1.12.1
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -27,7 +27,7 @@
     .EXTERNALSCRIPTDEPENDENCIES
 
     .RELEASENOTES
-    This release fixes a bug in the OutputCSV parameter, which up to version 1.11.0 would included false positives filtered out by the DiffCSV parameter, as well as implementing support for logging the output of the tool to the Windows Event Log.
+    This release fixes a bug in the Accesibility Tools persistence detection, which up to version 1.12.0 did not check for Utilman.exe hijacking.
 
     .PRIVATEDATA
 
@@ -1493,7 +1493,8 @@ function Find-AllPersistence
         "$env:windir\System32\osk.exe",
         "$env:windir\System32\Narrator.exe",
         "$env:windir\System32\Magnify.exe",
-        "$env:windir\System32\DisplaySwitch.exe"
+        "$env:windir\System32\DisplaySwitch.exe",
+        "$env:windir\System32\Utilman.exe"
       )
       
       $cmdHash = Get-FileHash -LiteralPath $env:windir\System32\cmd.exe
@@ -2425,12 +2426,11 @@ function Find-AllPersistence
   
   Write-Verbose -Message 'Module execution finished.'  
 }
-
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUugbqmFxTxEfYG1PWUjAJKz+X
-# OoWgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUv8SskhjkLqiPJmpEgI8DSL48
+# twOgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2530,17 +2530,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFHfTU0Eir/IBnx9L6hLm
-# 0JHi0W3fMA0GCSqGSIb3DQEBAQUABIICADK2HY6lw6970xC4OLr+6Qhmih5MeNnI
-# 0HW9FxZwPCCni6fsYQBCWMJUhwWTIvcklySPcavrUZT1DfWNjJFPJVjdhAKkHJGI
-# nyfKEmPK7k8MM9fqgvPE4BBoHTZdRDB+OgbBdHTtk2qpYdl25MPZrbFgAGi3Wq1K
-# T//LrDGNzB0KfVgSKt95wwEMQjxFY/4vCy03MMbBGvjI1PmxjocmONGY9p1HSLgK
-# /Jt+vmEhkQMHxiScMyuxeNzpUc4V0R8YnHXGnaEsiW2J+kEu8iV2D2fxCe1HiYTI
-# RImP119+mhzqGpkiaKvzKee51VSULTpn/7ZrjEoDLlnaGYPqWt9srJ40C7r6Na6N
-# Bx3M6MYEd76e6iv8MQbAQkRZXwbsNV+lQnpDhsAvRuw3C7u0Rj3XMK+h/tDOf/EG
-# mBwXYtiUyhwpX8QDdA180/M8jL8GqUQuMc+zc8RBML3UfnnAVpV0dqbp/311plnR
-# 7lFVnDDs6MUUdMWOqsZIDObuYMB+6G3/q4DlJjyclVbSnIvlyECSdZNoFQvA+mzP
-# DIjkXn2XfWZ7XePCTexaHNrWpy4iTEQsWrHVENc3dGlYuCHj0nJjNTXvUxJy4Gmv
-# ytFfkDxqWWwlFxxXCsa8cffpPIlHuuJMZkeE8HV8C0IEO2OrNTyoY7jSaFMHMCOV
-# wm5IArd9nElv
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFDcV1wpVYOtCgd4ekcoN
+# 0ViwxFRMMA0GCSqGSIb3DQEBAQUABIICAFrbBUQH7C6H+8a5D3xZoaznJZeO22CT
+# KKcUssIQu1YeDn6L+v7qyKqHSpc4/HWUF11YrIn0TdIolV+aW+O4LWIpaQVUhkZu
+# r8n7U1s4RbWUMnEsDnBfmOQzZWZ++HVnHQStUQOVIdNdk2YpeTx4ttIEf6VxASU5
+# FYBEwzm2D6PLjFYoiUDMEilJAGZujc5eVGh1DDe0A99vIAVWmiqLHSD5TUCG5abI
+# ZDsIeeZ/DHH7245YWmvDeg9hnI/U2cYxSGMQHnn6vvobdzKNp71dEgcIXLINrguz
+# BMwxuCYPvahR06lLtEt0Op7dv4tonl50EanjI7aSiD1XnKTXDrNt2tsANlcDYKdp
+# yUq8Kq1x2TOObZ839Fb9RPIoOcScNFHgsJzi4bde/uGsMAuyf2arrHNOVDltiE/s
+# QAjrfXMHSes8odq+88MnsouzYESgxfvNWl9MMT3Roaf3nPDfWnO9GpDkFGDY/VEj
+# zSFo4JuwMPk0Pn+UhAKpH3sXVf6M/27Mf1qMBDkuXOwFBEpf0RYlK0px02DtkP20
+# rrDGPBeUQjbqn7OSsxwfL4VVrpZVDJw+dKlgnZp8/nY+tOGpz4TgzU3+CmAppomO
+# UB89VxotemIhyn3bb/v9kqQEXEOW90vhaQmgaoQ5Kz4F490ENWBeM2VeHFQGI6lA
+# mcqjmuOk7kuV
 # SIG # End signature block

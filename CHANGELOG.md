@@ -1,4 +1,8 @@
 # Changelog
+## 1.12.1
+Fixes:
+   - Fixed a bug which prevented the detection of the Utilman.exe hijacking in the Accessibility Tools persistence detection.
+
 ## 1.12.0
 Features:
    - Save results to the local Windows Event Log
@@ -13,11 +17,9 @@ Features:
 Fixes:
    - Fixed a bug which prevented the detection of CmdAutoRun from working as intended.
 
-
 ## 1.10.1
 Fixes:
    - Fixed a bug which prevented -DiffCSV from working as intended.
-
 
 ## 1.10.0
 Features:
