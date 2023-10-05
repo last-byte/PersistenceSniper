@@ -1,4 +1,11 @@
 # Changelog
+## 1.13.0
+Features:
+   - Detection for RID hijacking
+   - Detection for the Suborner technique
+Fixes:
+   - Fixed a bug which regarding module-wide string comparisons (see issue #19).
+
 ## 1.12.1
 Fixes:
    - Fixed a bug which prevented the detection of the Utilman.exe hijacking in the Accessibility Tools persistence detection.
