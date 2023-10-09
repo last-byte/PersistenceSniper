@@ -25,7 +25,7 @@ To learn how to use PersistenceSniper properly, head to the [Project's Wiki](htt
 The persistence techniques implemented so far are detailed in the [Detections Page](https://github.com/last-byte/PersistenceSniper/wiki/3-%E2%80%90-Detections) of PersistenceSniper's Wiki.
 
 ## Credits
-The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
+Most of this tool is based on the work of other skilled researchers, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
 - [Hexacorn](https://www.hexacorn.com/) and his never-ending [Beyond good ol' Run key series](https://www.hexacorn.com/blog/2017/01/28/beyond-good-ol-run-key-all-parts/);
 - [Grzegorz Tworek](https://twitter.com/0gtweet/) and his amazing [persistence-info.github.io website](https://persistence-info.github.io/);
 - All the other researchers who disclosed cool and unknown persistence techniques.
