@@ -22,7 +22,7 @@ Why writing such a tool, you might ask. Well, for starters, I tried looking arou
 To learn how to use PersistenceSniper properly, head to the [Project's Wiki](https://github.com/last-byte/PersistenceSniper/wiki).
 
 ## Persistence techniques implemented so far
-The persistence techniques implemented so far are detailed in the [Detections Page](https://github.com/last-byte/PersistenceSniper/wiki/3-%E2%80%90-Detections) of the PersistenceSniper's Wiki.
+The persistence techniques implemented so far are detailed in the [Detections Page](https://github.com/last-byte/PersistenceSniper/wiki/3-%E2%80%90-Detections) of PersistenceSniper's Wiki.
 
 ## Credits
 The techniques implemented in this script have already been published by skilled researchers around the globe, so it's right to give credit where credit's due. This project wouldn't be around if it weren't for:
