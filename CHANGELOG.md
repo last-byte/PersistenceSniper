@@ -3,7 +3,7 @@
 Features:
    - Detection for the DSRM backdoor
 Fixes:
-   - Fixed a bug which regarding the Parse-NetUser internal function (see issue #20).
+   - Fixed a bug regarding the Parse-NetUser internal function (see issue #20).
 
 ## 1.13.0
 Features:
