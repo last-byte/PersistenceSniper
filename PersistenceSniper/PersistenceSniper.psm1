@@ -1,24 +1,24 @@
 <#PSScriptInfo
 
-    .VERSION 1.13.0
+    .VERSION 1.14.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
     .AUTHOR Federico @last0x00 Lagrasta
 
-    .DESCRIPTION This module tries to enumerate all the persistence methods implanted on a compromised machine. New techniques may take some time before they are implemented in this script, so don't assume that because the module didn't find anything the machine is clean.
+    .DESCRIPTION This module tries to enumerate all the persistence techniques implanted on a compromised machine.
 
     .COMPANYNAME @APTortellini
 
     .COPYRIGHT Commons Clause
 
-    .TAGS Windows Persistence Detection Blue Team
+    .TAGS Windows Registry Persistence Detection Blue Purple Red Team Incident Response DFIR IR Forensics AMSI Powershell
 
     .LICENSEURI https://github.com/last-byte/PersistenceSniper/blob/main/LICENSE
 
     .PROJECTURI https://github.com/last-byte/PersistenceSniper
 
-    .ICONURI https://github.com/last-byte/PersistenceSniper/blob/main/resources/persistencesniper2.png
+    .ICONURI https://blog.notso.pro/img/persistencesnipernew4.png
 
     .EXTERNALMODULEDEPENDENCIES
 
@@ -26,8 +26,7 @@
 
     .EXTERNALSCRIPTDEPENDENCIES
 
-    .RELEASENOTES
-    This release implements detection for RID hijacking and the Suborner technique. It also fixes a module-wide bug regarding string comparisons (see issue #19).
+    .RELEASENOTES Check the CHANGELOG available at the Github Repository.
 
     .PRIVATEDATA
 
@@ -154,7 +153,8 @@ function Find-AllPersistence
         'RunExAndRunOnceEx',
         'DotNetStartupHooks',
         'RIDHijacking',
-        'SubornerAttack'
+        'SubornerAttack',
+        'DSRMBackdoor'
     )]
     $PersistenceMethod = 'All',
      
@@ -431,19 +431,24 @@ function Find-AllPersistence
           WDAGUtilityAccount
       #>
 
+      $outputStart = 0
       foreach ($item in $input) {
+        if ($item -match '----') {
+          $outputStart = 1
+          continue
+        }
+        elseif($outputStart -eq 0)
+        {
+          continue
+        }
         if ($item -eq ""){
           continue
         }
-        if ($item -match 'User accounts for') {
+        if($item -match '.*\.$')
+        {
           continue
         }
-        elseif ($item -match '----') {
-          continue
-        }
-        elseif ($item -match 'The command completed') {
-          continue
-        }
+
         $contentArray = @()
         foreach ($line in $item) {
           while ($line.Contains("  ")){
@@ -2185,7 +2190,7 @@ function Find-AllPersistence
         if($decRid.ToString() -ne $userRid.ToString())
         {
           Write-Verbose -Message "$hostname - Found username $($user.Name) with hijacked RID $decRid"
-          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'RID Hijacking' -Classification 'Uncatalogued Technique N.17' -Path '$user' -Value $decRid -AccessGained 'User/System' -Note 'RID hijacking allows an attacker to covertly replace the RID of a user with the RID of another user, effectively giving the first user all of the privileges of the second user. The second user is usually an Administrator, which allows the first user to gain administrator level privileges while using a non-administrator account.' -Reference 'https://pentestlab.blog/2020/02/12/persistence-rid-hijacking/' 
+          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'RID Hijacking' -Classification 'Uncatalogued Technique N.17' -Path "$user" -Value $decRid -AccessGained 'User/System' -Note 'RID hijacking allows an attacker to covertly replace the RID of a user with the RID of another user, effectively giving the first user all of the privileges of the second user. The second user is usually an Administrator, which allows the first user to gain administrator level privileges while using a non-administrator account.' -Reference 'https://pentestlab.blog/2020/02/12/persistence-rid-hijacking/' 
           $null = $persistenceObjectArray.Add($PersistenceObject)
         }
       }
@@ -2198,6 +2203,17 @@ function Find-AllPersistence
       Write-Verbose -Message ''
     }
     
+    function Get-DSRMBackdoor
+    {
+      Write-Verbose -Message "$hostname - Checking for Directory Services Restore Mode (DSRM) backdoor..."
+      $dsrmAdminLogonBehavior = (Get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Lsa").DsrmAdminLogonBehavior
+      if($dsrmAdminLogonBehavior -EQ 2)
+      {
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'DSRM Backdoor' -Classification 'MITRE ATT&CK T1003.003' -Path 'HKLM:\System\CurrentControlSet\Control\Lsa\DsrmAdminLogonBehavior' -Value $dsrmAdminLogonBehavior -AccessGained 'System' -Note "The password used to enter Directory Services Restore Mode (DSRM) is the password set to the local administrator of a Domain Controller during DCPROMO. If the DsrmAdminLogonBehavior property of the HKLM:\System\CurrentControlSet\Control\Lsa key is set to 2, this password can be used to access the Domain Controller with the local administrator account." -Reference 'https://adsecurity.org/?p=1785'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      } 
+      Write-Verbose -Message ''
+    }
     function Out-EventLog 
     {
 
@@ -2263,6 +2279,7 @@ function Find-AllPersistence
           'DotNet Startup Hooks'                                      = $null
           'RID Hijacking'                                             = $null
           'Suborner Attack'                                           = $null
+          'DSRM Backdoor'                                             = $null
         }
 
         # Collect the keys in a separate list
@@ -2347,6 +2364,7 @@ function Find-AllPersistence
       Get-DotNetStartupHooks
       Get-SubornerAttack
       Get-RidHijacking
+      Get-DSRMBackdoor
       
       if($IncludeHighFalsePositivesChecks.IsPresent)
       {
@@ -2623,8 +2641,14 @@ function Find-AllPersistence
           Get-SubornerAttack
           break
         }
+        'DSRMBackdoor'
+        {
+          Get-DSRMBackdoor
+          break
+        }
       }
-    }
+    }      
+        
     
     if($LogFindings.IsPresent)
     {
@@ -2693,8 +2717,8 @@ function Find-AllPersistence
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUAY88MwrhfgClD3rN/8nhHFZn
-# wtCgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUUrjXS1mhVDswqe2SprN1ekn8
+# 1/ugghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2794,17 +2818,17 @@ function Find-AllPersistence
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFFiz1pkMOk1L/2oNAa+Q
-# BQKpoYlcMA0GCSqGSIb3DQEBAQUABIICAF2TCU7e42deBuQu3ZmyBBWmXp3HsXDN
-# dbmS8W+2dWe4noxg2tmwA4l62AJelZeIxlleFUUtcqWF90KUkqgTLFTnTbjUSd5a
-# KNKY/TnHqZMAZG4AtxqnJS0OWCMn9ZD3pKd6IzryrylO2IukIinz5ldYG38syVMA
-# 6fpsUGOwvG7SrbbtHzXrEuehPwNIy7NG4jZJMAvvPwdJtMt24NdXti8UwRat1Q3K
-# ylwBVTc/ZCpBpbYMJZJSx8KiDV5ZdK9raAXOf+sIe6fqOEPpaMoCBu3ZA1B8LheI
-# twQgqmH+IEHfWUofggqrZb0pPj+wXqYrEcS/ys1BxzNnknkPk5RRVUgMNOEEUfV5
-# 5MxhgJ7FRpvCa8y5wbdio4Xf5dlWHY5a2md/IASbQSNW6heaguP6wLghVDJXj/sE
-# dumJNVE3WbdMkPG/UMISQVs9fGKmLEV41IQ8QlEOx6ORuxXoy845ojcu/lyz2MA2
-# /wa00IgoGEuMN0TEHMhOs1vnwRMN8R2uyTWHO3ojA4rPEtdpOq7b4f/i7qX8y0Cv
-# pSbC3zfqcMSwr6iRRmOthn5Hz1YaHWMKFURGMWT9xXaANbVgYLGVfpNDeJM0yT9N
-# t6VNmOtMqBj9M7j7ZIf8rSf+TmT6xqDEcPNOGV8QfQyCxCjfMfdLTnAoofB2Qydn
-# quHxlZDEQlbI
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFB+0CPb5QSvDDiRC7/BA
+# frZKT5gKMA0GCSqGSIb3DQEBAQUABIICAAUYc/XJG41T3RdjVxlJGzJr2d0pvMQM
+# n/0StwXXR/2rbp1s2M+4rTPUEEE/6/r0QQusLTsM5A4ZPUfgHv3mU9jlXYKp4fzk
+# VIoid+u1Otf4pDZFU+ShVaihPtLZQEvyOopzZtRrrCR7W62j4bQJM80MVUOrc7am
+# nDkg7ksXeBLryWFJBN3M4Ei3Z+VDXJrOD9GSe/2IV7EnkgIC3uFjCTwaJl3Oe76p
+# xbtvKYv/Tf0LmMk4aS7SAlR/pZnnZAU4WP64+3bkb89pKZCQZ5ArWngpvnut7DPF
+# dE2K6F10eY0w8yJ4HcziHU7sVJxS/qxUzW0s1kr99ozjhB8PFNw/10rc5LIaa21j
+# mA629ShYb57BQ57/Sel+qonbK4uJnxNufz42nE9KMc+NWUwLHeYIR/PVc433twyz
+# eQsKG3fA+DmnyXS4gsHV8YNizkDoFsYVQLBQvWhh30PbkaAJx1HxOoUmvhI4NH70
+# K6YueZNCvo5R0moyaxGCyK+/faTgvhiDsBuaxguzLsMZAXAmJ5KWM1ddS3d/39LC
+# TzwzjRQ2ZhfDQ7kU3EPJkUsUKweeuhC6W1cRUaj1iuQcvUnLwNGauGzswCQGzEY8
+# kAo+sCIQI5Bz2FOuyBu1d+asxo7FFLObu65tiEYJSn9ZtfHEJ0YYjA6UWXSNB1VG
+# yabwrU4k8hNb
 # SIG # End signature block

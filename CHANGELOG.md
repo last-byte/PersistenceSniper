@@ -1,10 +1,16 @@
 # Changelog
+## 1.14.0
+Features:
+   - Detection for the DSRM backdoor
+Fixes:
+   - Fixed a bug which regarding the Parse-NetUser internal function (see issue #20).
+
 ## 1.13.0
 Features:
    - Detection for RID hijacking
    - Detection for the Suborner technique
 Fixes:
-   - Fixed a bug which regarding module-wide string comparisons (see issue #19).
+   - Fixed a bug regarding module-wide string comparisons (see issue #19).
 
 ## 1.12.1
 Fixes:
