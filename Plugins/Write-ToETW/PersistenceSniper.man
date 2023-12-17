@@ -1,8 +1,8 @@
 <instrumentationManifest xmlns="http://schemas.microsoft.com/win/2004/08/events">
  <instrumentation xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events">
   <events xmlns="http://schemas.microsoft.com/win/2004/08/events">
-<provider name="PersistenceSniper" guid="{4b22d928-e344-5d05-07b4-1b61c575912a}" symbol="PersistenceSniper" resourceFileName="C:\Provider\PersistenceSniper.dll"
-                     messageFileName="C:\Provider\PersistenceSniper.dll">
+<provider name="PersistenceSniper" guid="{4b22d928-e344-5d05-07b4-1b61c575912a}" symbol="PersistenceSniper" resourceFileName="C:\PersistenceSniper\Plugins\Write-ToETW\PersistenceSniper.dll"
+                     messageFileName="C:\PersistenceSniper\Plugins\Write-ToETW\PersistenceSniper.dll">
  <channels>
   <channel chid="Operational" name="PersistenceSniper/Operational" value="17" type="Operational" enabled="true"/>
  </channels>

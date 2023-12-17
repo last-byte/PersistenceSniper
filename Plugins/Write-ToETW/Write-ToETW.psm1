@@ -67,8 +67,8 @@ function Write-ToETW {
             "Wow6432Node DbgManagedDebugger Custom Debugger"="WriteDotNetDebugger"
         }
     
-        # Load the C# code
-        Add-Type -Path "C:\PersistenceSniper\Modules\ETWLib.dll"
+        # Load the PersistenceSniper Custom Provider
+        Add-Type -Path "C:\PersistenceSniper\Plugins\Write-ToETW\ETWLib.dll"
         
         
         foreach($result in $scanResult) {
