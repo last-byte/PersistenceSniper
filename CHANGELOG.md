@@ -1,4 +1,10 @@
 # Changelog
+## 1.15.0
+Features:
+   - Detection for the GhostTask technique
+Fixes:
+   - Fixed some minor bugs
+
 ## 1.14.0
 Features:
    - Detection for the DSRM backdoor
