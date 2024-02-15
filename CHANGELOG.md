@@ -1,4 +1,8 @@
 # Changelog
+## 1.15.1
+Fixes:
+   - Fixed a gap in the detection of the techniques which relied on Get-IfSafeExecutable function which would prevent Powershell persistences from showing up
+
 ## 1.15.0
 Features:
    - Detection for the GhostTask technique
