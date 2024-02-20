@@ -430,11 +430,10 @@ function Find-AllPersistence {
         }
 
         $contentArray = @()
-        foreach ($line in $item) {
-          while ($line.Contains("  ")) {
-            $line = $line -replace '  ', ' '
-          }
-          $contentArray += $line.Split(' ')
+        foreach ($line in $item -split '\s{2,}') {
+            if ($line -ne '') {
+                $contentArray += $line
+            }
         }
  
         foreach ($content in $contentArray) {
