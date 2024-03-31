@@ -1,4 +1,11 @@
 # Changelog
+## 1.16.0
+Features:
+   - Detection for the BootVerificationProgram hijacking
+   - Detection for the AppInit DLLs injection
+Fixes:
+   - Fixed a false positive in the detection of the Suborner Attack caused by a faulty implementation of the Parse-NetUser internal function
+
 ## 1.15.1
 Fixes:
    - Fixed a gap in the detection of the techniques which relied on Get-IfSafeExecutable function which would prevent Powershell persistences from showing up

@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.15.1
+    .VERSION 1.16.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -154,7 +154,9 @@ function Find-AllPersistence {
       'RIDHijacking',
       'SubornerAttack',
       'DSRMBackdoor',
-      'GhostTask'
+      'GhostTask',
+      'BootVerificationProgram',
+      'AppInitDLLs'
     )]
     $PersistenceMethod = 'All',
      
@@ -430,11 +432,10 @@ function Find-AllPersistence {
         }
 
         $contentArray = @()
-        foreach ($line in $item) {
-          while ($line.Contains("  ")) {
-            $line = $line -replace '  ', ' '
+        foreach ($line in $item -split '\s{2,}') {
+          if ($line -ne '') {
+              $contentArray += $line
           }
-          $contentArray += $line.Split(' ')
         }
  
         foreach ($content in $contentArray) {
@@ -1820,6 +1821,7 @@ function Find-AllPersistence {
       }
       Write-Verbose -Message ''
     }
+
     function Get-DotNetStartupHooks {
       Write-Verbose -Message "$hostname - Getting DotNet Startup Hooks..."
       foreach ($hive in $systemAndUsersHives) {
@@ -1848,7 +1850,7 @@ function Find-AllPersistence {
       }
       Write-Verbose -Message ''   
     }
-    
+
     function Get-SubornerAttack {
       $netUsers = net.exe users | Parse-NetUser
       $poshUsers = Get-LocalUser | Select-Object Name
@@ -1860,6 +1862,7 @@ function Find-AllPersistence {
       }
       Write-Verbose -Message '' 
     }
+
     function Get-RidHijacking {
      
       Write-Verbose -Message "$hostname - Checking for RID Hijacking"
@@ -1938,6 +1941,37 @@ function Find-AllPersistence {
       } 
       Write-Verbose -Message ''
     }
+
+    function Get-BootVerificationProgram {
+      Write-Verbose -Message "$hostname - Checking for Boot Verification Program hijacking..."
+      $bootVerificationProgram = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\BootVerificationProgram").ImagePath
+      if ($bootVerificationProgram) {
+        Write-Verbose -Message "$hostname - [!] Found custom Boot Verification Program at ImagePath property of the HKLM:\SYSTEM\CurrentControlSet\Control\BootVerificationProgram key!"
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Boot Verification Program Hijacking' -Classification 'Uncatalogued Technique N.19' -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\BootVerificationProgram\ImagePath' -Value $bootVerificationProgram -AccessGained 'System' -Note "The executable pointed to by the ImagePath property of the HKLM:\SYSTEM\CurrentControlSet\Control\BootVerificationProgram key is run by the Windows Service Manager at boot time in place of the legitimate Bootvrfy.exe" -Reference 'https://persistence-info.github.io/Data/bootverificationprogram.html'
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      } 
+      Write-Verbose -Message ''
+    }
+
+    function Get-AppInitDLLs {
+      Write-Verbose -Message "$hostname - Getting AppInit DLLs..."
+        $appInitDLL = (Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows").AppInit_DLLs
+        if ($appInitDLL) {
+          Write-Verbose -Message "$hostname - [!] AppInit_DLLs property under the HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows key is populated!"
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppInit DLL injection' -Classification 'MITRE ATT&CK T1546.010' -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Value $appInitDLL -AccessGained 'System/User' -Note "The DLLs specified in the AppInit_DLLs property of the HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows key are loaded by user32.dll whenever a new process starts." -Reference 'https://attack.mitre.org/techniques/T1546/010/' 
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+        }
+    
+        $appInitDLL = (Get-ItemProperty -Path "HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows").AppInit_DLLs
+        if ($appInitDLL) {
+          Write-Verbose -Message "$hostname - [!] AppInit_DLLs property under the HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows key is populated!"
+            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppInit DLL injection' -Classification 'MITRE ATT&CK T1546.010' -Path 'HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows' -Value $appInitDLL -AccessGained 'System/User' -Note "The DLLs specified in the AppInit_DLLs property of the HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows key are loaded by user32.dll whenever a new process starts." -Reference 'https://attack.mitre.org/techniques/T1546/010/' 
+            $null = $persistenceObjectArray.Add($PersistenceObject)
+        }
+      
+      Write-Verbose -Message '' 
+    }
+
     function Out-EventLog {
 
       Param (
@@ -2004,6 +2038,8 @@ function Find-AllPersistence {
           'Suborner Attack'                                           = $null
           'DSRM Backdoor'                                             = $null
           'GhostTask'                                                 = $null
+          'BootVerificationProgram'                                   = $null
+          'AppInitDLLs'                                               = $null
         }
 
         # Collect the keys in a separate list
@@ -2089,6 +2125,8 @@ function Find-AllPersistence {
       Get-RidHijacking
       Get-DSRMBackdoor
       Get-GhostTask
+      Get-BootVerificationProgram
+      Get-AppInitDLLs
       
       if ($IncludeHighFalsePositivesChecks.IsPresent) {
         Write-Verbose -Message "$hostname - You have used the -IncludeHighFalsePositivesChecks switch, this may generate a lot of false positives since it includes checks with results which are difficult to filter programmatically..."
@@ -2318,6 +2356,16 @@ function Find-AllPersistence {
           Get-GhostTask
           break
         }
+        'BootVerificationProgram'
+        {
+          Get-BootVerificationProgram
+          break
+        }
+        'AppInitDLLs'
+        {
+          Get-AppInitDLLs
+          break
+        }
       }
     }      
         
@@ -2375,12 +2423,11 @@ function Find-AllPersistence {
   
   Write-Verbose -Message 'Module execution finished.'  
 }
-
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU9SiTa0xD0GnMf2t+M6qW2lGJ
-# H4KgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiPjkk6OPIYFuG1J6aiCVyWL0
+# h+egghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2480,17 +2527,17 @@ function Find-AllPersistence {
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFK607bYv/sX0YdRQRuZR
-# j+OLOdmBMA0GCSqGSIb3DQEBAQUABIICAIYW6zYeHFFW1XA66hhxQpxhdNZiczwK
-# zEosiMtuOnmnwsLZ3oQcObdIQMCVXjV+HLDdDXI/L+qJJMhaF9fileo3hjGS+AWs
-# aG0g5/K5d61BB6ypgHlb/dkrqzhoDbTosZDCK9WWoo37RcvZv+jNuls3IJ9r4E7+
-# 24lPxb7TROkBq/C2zkhYT2+OqVLRpKpaai8cKWvNPyJRM/rsZjbuJsD0Qkr8NbCM
-# Ki718QLkGHA1dOn3tuGTY5zBCGSkeTGnqaSxK2fDa3zW/c+5ZxxmZOs4tmHrcWVV
-# 0N/BP+wQ6ejKlQtZZEyPtEwguLM2EioRipW7wfzUY6T3QYZRjgJvhIRAfCVCJfPJ
-# dSjzOMwDekI2hCVfg4f4wQOghtXnzcU3rWgfjfUWg+pfWSDYnEMufI7UcKmkMetz
-# fHJB1bLySttljorCRb8voVFcax5EpYPyexoUYnSxkwNwlsKIW+1Vgoj93SmLfnpm
-# KnfavplaC6C14cqo3E7NgVjSu1dpkLBKGZ6cEUJt1KI2ubc2ZObB3uy1/gq5JJZk
-# jYHPZcGvNqLR000K+sV4T23kKOsR5LjtGzIPmsRUc/7hpKmAKnKjKptmbOGr3iX/
-# UDqG6zSaks1fUmpmLkrvsXqHZcimeetIBA8H9fnTIlY3H0iKfAV9CcIjXXDpGgWf
-# ykCKkIwijJZg
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFPS/pEkn0cXGewvPHFBm
+# 9PsnKwXDMA0GCSqGSIb3DQEBAQUABIICAFsAtmXr8hNrs+uIdkjiSaUqbRqaE8Ng
+# RFTX8kSUi3f2DCEgjtBU+nS+50t5Owubdc+zkEVXzFSrJ1A3SrEOzil/yI1JzLNs
+# 9UWQqbgkXTs1feb+bqeI9tvK2INDMYqqPZD1IaXmqAIgaXqprVdj2z69c1px4wYF
+# wjhoyMn6qbCztumhzdsk/xbZ7HWQ1oZoI7ji9RDrJfXna6vSsCAbEmH7kLEDkbw1
+# 4RUpyHS+7wc1NO9fkeg+oEYD3mK8eWfhk7PhSlw94mI4F6L9v8UFUOEnKJWxtGh8
+# q/F19YgIBTrQQAokng8Nq+ikzNKcl4jIUDiIv229eZSNct7ia54jYwtphEmxdG8f
+# OvxPlpkG8cBnpbjNXVkWDPMh8jFEDoAMctnBbDutsUmUXew9n+gRUNubk9U2GpzD
+# D19KCeKaroUNp2pe8Gq9wYIrHHajiaPUedzuGXcN4sr0pWiXQynTBuIYk1yIqBfB
+# BVH5tZBhvUYEAOx8f66f+L25JwEE1fyjNI9ti+YfzfrqOgS4mKzvBkRiimjGeWpL
+# tYHF6kBCa021bBXwUoHgdXcpGTgAWNbIBhpg6OJ5JhKGVdgisc//Bc/PGRXMWNm4
+# 5p+G7iraTsbyo4lrHVg2hE00ynARid6MMs39PpyCqPvItCRoKu3p6ep0a6fyHIG5
+# NaCLSEJs0RYu
 # SIG # End signature block
