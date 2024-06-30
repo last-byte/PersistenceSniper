@@ -1,4 +1,8 @@
 # Changelog
+## 1.16.1
+Fixes:
+   - Fixed a bug in the Ghost Task function which under certain circumstances prevented the detection of the technique 
+
 ## 1.16.0
 Features:
    - Detection for the BootVerificationProgram hijacking

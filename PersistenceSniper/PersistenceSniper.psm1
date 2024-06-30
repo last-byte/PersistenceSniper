@@ -1,14 +1,12 @@
 <#PSScriptInfo
 
-    .VERSION 1.16.0
+    .VERSION 1.16.1
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
     .AUTHOR Federico @last0x00 Lagrasta
 
     .DESCRIPTION This module tries to enumerate all the persistence techniques implanted on a compromised machine.
-
-    .COMPANYNAME @APTortellini
 
     .COPYRIGHT Commons Clause
 
@@ -434,7 +432,7 @@ function Find-AllPersistence {
         $contentArray = @()
         foreach ($line in $item -split '\s{2,}') {
           if ($line -ne '') {
-              $contentArray += $line
+            $contentArray += $line
           }
         }
  
@@ -1906,28 +1904,39 @@ function Find-AllPersistence {
         $taskSD = (Get-ItemProperty -Path $key.PSPath).SD
         if ($null -eq $taskSD) {
           Write-Verbose -Message "$hostname - [!] Found a key in HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree without the SD property!"
-          
-          # Parsing the Actions structure requires some offset arithmethics. Check the GhostTask.h header file on the linked Github repo you can find in the reference of this technique
-          $taskGUID = (Get-ItemProperty -Path $key.PSPath).Id
-          $taskActions = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$taskGUID").Actions
-          $SizeOfAuthor = [bitconverter]::ToInt32($taskActions[$SizeOfAuthorOffset..($SizeOfAuthorOffset + 4)], 0)
-          $SizeOfCmdOffset = $SizeOfAuthorOffset + 4 + $SizeOfAuthor + 6
-          $SizeOfCmd = [bitconverter]::ToInt32($taskActions[$SizeOfCmdOffset..($SizeOfCmdOffset + 3)], 0)
-          $CmdOffset = $SizeOfCmdOffset + 4
-          $SizeOfArgumentOffset = $CmdOffset + $SizeOfCmd
-          $SizeOfArgument = [bitconverter]::ToInt32($taskActions[$SizeOfArgumentOffset..($SizeOfArgumentOffset + 3)], 0)
-          $ArgumentOffset = $SizeOfArgumentOffset + 4
-
-          $CmdByteArray = $taskActions[$CmdOffset.. ($CmdOffset + ($SizeOfCmd - 1))]
-          $ArgumentByteArray = $taskActions[$ArgumentOffset.. ($ArgumentOffset + ($SizeOfArgument - 1))]
-
-          $enc = [System.Text.Encoding]::UTF8
-          $Cmd = $enc.GetString($CmdByteArray)
-          $Argument = $enc.GetString($ArgumentByteArray)
-
-          $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'GhostTask' -Classification 'Uncatalogued Technique N.18' -Path $key.FullName -Value "$Cmd $Argument" -AccessGained 'System' -Note 'Malicious scheduled tasks can be created manually by properly modifying some registry keys. Tasks created in this way and without the SD property do not show up in the Task Scheduler utility or in the Event Log.' -Reference 'https://github.com/netero1010/GhostTask' 
-          $null = $persistenceObjectArray.Add($PersistenceObject)
         }
+        else {
+          $encodedMaliciousSD = 'MQAgADAAIAA0ACAAMQAyADgAIAAyADgAIAAwACAAMAAgADAAIAA0ADQAIAAwACAAMAAgADAAIAAwACAAMAAgADAAIAAwACAAMgAwACAAMAAgADAAIAAwACAAMgAgADAAIAA4ACAAMAAgADAAIAAwACAAMAAgADAAIAAxACAAMgAgADAAIAAwACAAMAAgADAAIAAwACAANQAgADMAMgAgADAAIAAwACAAMAAgADMAMgAgADIAIAAwACAAMAAgADEAIAAxACAAMAAgADAAIAAwACAAMAAgADAAIAA1ACAAMQA4ACAAMAAgADAAIAAwAA=='
+          $maliciousSD = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($encodedMaliciousSD))
+          $SDBytes = [System.Text.Encoding]::Unicode.GetBytes($taskSD)
+          $EncodedSDBytes = [Convert]::ToBase64String($SDBytes)
+          $DecodedSD = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($EncodedSDBytes))
+          if ($maliciousSD -ne $DecodedSD) {
+            continue
+          }
+          Write-Verbose -Message "$hostname - [!] Found a key in HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree with a GhostTask SD property!"
+        }
+
+        # Parsing the Actions structure requires some offset arithmethics. Check the GhostTask.h header file on the linked Github repo you can find in the reference of this technique
+        $taskGUID = (Get-ItemProperty -Path $key.PSPath).Id
+        $taskActions = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$taskGUID").Actions
+        $SizeOfAuthor = [bitconverter]::ToInt32($taskActions[$SizeOfAuthorOffset..($SizeOfAuthorOffset + 4)], 0)
+        $SizeOfCmdOffset = $SizeOfAuthorOffset + 4 + $SizeOfAuthor + 6
+        $SizeOfCmd = [bitconverter]::ToInt32($taskActions[$SizeOfCmdOffset..($SizeOfCmdOffset + 3)], 0)
+        $CmdOffset = $SizeOfCmdOffset + 4
+        $SizeOfArgumentOffset = $CmdOffset + $SizeOfCmd
+        $SizeOfArgument = [bitconverter]::ToInt32($taskActions[$SizeOfArgumentOffset..($SizeOfArgumentOffset + 3)], 0)
+        $ArgumentOffset = $SizeOfArgumentOffset + 4
+
+        $CmdByteArray = $taskActions[$CmdOffset.. ($CmdOffset + ($SizeOfCmd - 1))]
+        $ArgumentByteArray = $taskActions[$ArgumentOffset.. ($ArgumentOffset + ($SizeOfArgument - 1))]
+
+        $enc = [System.Text.Encoding]::UTF8
+        $Cmd = $enc.GetString($CmdByteArray)
+        $Argument = $enc.GetString($ArgumentByteArray)
+
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'GhostTask' -Classification 'Uncatalogued Technique N.18' -Path $key.Name -Value "$Cmd $Argument" -AccessGained 'System' -Note 'Malicious scheduled tasks can be created manually by properly modifying some registry keys. Tasks created in this way and without the SD property do not show up in the Task Scheduler utility or in the Event Log.' -Reference 'https://github.com/netero1010/GhostTask' 
+        $null = $persistenceObjectArray.Add($PersistenceObject)
       }
       Write-Verbose -Message ''
     }
@@ -1955,19 +1964,19 @@ function Find-AllPersistence {
 
     function Get-AppInitDLLs {
       Write-Verbose -Message "$hostname - Getting AppInit DLLs..."
-        $appInitDLL = (Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows").AppInit_DLLs
-        if ($appInitDLL) {
-          Write-Verbose -Message "$hostname - [!] AppInit_DLLs property under the HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows key is populated!"
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppInit DLL injection' -Classification 'MITRE ATT&CK T1546.010' -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Value $appInitDLL -AccessGained 'System/User' -Note "The DLLs specified in the AppInit_DLLs property of the HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows key are loaded by user32.dll whenever a new process starts." -Reference 'https://attack.mitre.org/techniques/T1546/010/' 
-            $null = $persistenceObjectArray.Add($PersistenceObject)
-        }
+      $appInitDLL = (Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows").AppInit_DLLs
+      if ($appInitDLL) {
+        Write-Verbose -Message "$hostname - [!] AppInit_DLLs property under the HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows key is populated!"
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppInit DLL injection' -Classification 'MITRE ATT&CK T1546.010' -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -Value $appInitDLL -AccessGained 'System/User' -Note "The DLLs specified in the AppInit_DLLs property of the HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows key are loaded by user32.dll whenever a new process starts." -Reference 'https://attack.mitre.org/techniques/T1546/010/' 
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      }
     
-        $appInitDLL = (Get-ItemProperty -Path "HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows").AppInit_DLLs
-        if ($appInitDLL) {
-          Write-Verbose -Message "$hostname - [!] AppInit_DLLs property under the HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows key is populated!"
-            $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppInit DLL injection' -Classification 'MITRE ATT&CK T1546.010' -Path 'HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows' -Value $appInitDLL -AccessGained 'System/User' -Note "The DLLs specified in the AppInit_DLLs property of the HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows key are loaded by user32.dll whenever a new process starts." -Reference 'https://attack.mitre.org/techniques/T1546/010/' 
-            $null = $persistenceObjectArray.Add($PersistenceObject)
-        }
+      $appInitDLL = (Get-ItemProperty -Path "HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows").AppInit_DLLs
+      if ($appInitDLL) {
+        Write-Verbose -Message "$hostname - [!] AppInit_DLLs property under the HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows key is populated!"
+        $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'AppInit DLL injection' -Classification 'MITRE ATT&CK T1546.010' -Path 'HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows' -Value $appInitDLL -AccessGained 'System/User' -Note "The DLLs specified in the AppInit_DLLs property of the HKLM:\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows key are loaded by user32.dll whenever a new process starts." -Reference 'https://attack.mitre.org/techniques/T1546/010/' 
+        $null = $persistenceObjectArray.Add($PersistenceObject)
+      }
       
       Write-Verbose -Message '' 
     }
@@ -2356,13 +2365,11 @@ function Find-AllPersistence {
           Get-GhostTask
           break
         }
-        'BootVerificationProgram'
-        {
+        'BootVerificationProgram' {
           Get-BootVerificationProgram
           break
         }
-        'AppInitDLLs'
-        {
+        'AppInitDLLs' {
           Get-AppInitDLLs
           break
         }
@@ -2423,11 +2430,12 @@ function Find-AllPersistence {
   
   Write-Verbose -Message 'Module execution finished.'  
 }
+
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiPjkk6OPIYFuG1J6aiCVyWL0
-# h+egghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURT02u7GdzTS2tsva5puSrR32
+# 6BagghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2527,17 +2535,17 @@ function Find-AllPersistence {
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFPS/pEkn0cXGewvPHFBm
-# 9PsnKwXDMA0GCSqGSIb3DQEBAQUABIICAFsAtmXr8hNrs+uIdkjiSaUqbRqaE8Ng
-# RFTX8kSUi3f2DCEgjtBU+nS+50t5Owubdc+zkEVXzFSrJ1A3SrEOzil/yI1JzLNs
-# 9UWQqbgkXTs1feb+bqeI9tvK2INDMYqqPZD1IaXmqAIgaXqprVdj2z69c1px4wYF
-# wjhoyMn6qbCztumhzdsk/xbZ7HWQ1oZoI7ji9RDrJfXna6vSsCAbEmH7kLEDkbw1
-# 4RUpyHS+7wc1NO9fkeg+oEYD3mK8eWfhk7PhSlw94mI4F6L9v8UFUOEnKJWxtGh8
-# q/F19YgIBTrQQAokng8Nq+ikzNKcl4jIUDiIv229eZSNct7ia54jYwtphEmxdG8f
-# OvxPlpkG8cBnpbjNXVkWDPMh8jFEDoAMctnBbDutsUmUXew9n+gRUNubk9U2GpzD
-# D19KCeKaroUNp2pe8Gq9wYIrHHajiaPUedzuGXcN4sr0pWiXQynTBuIYk1yIqBfB
-# BVH5tZBhvUYEAOx8f66f+L25JwEE1fyjNI9ti+YfzfrqOgS4mKzvBkRiimjGeWpL
-# tYHF6kBCa021bBXwUoHgdXcpGTgAWNbIBhpg6OJ5JhKGVdgisc//Bc/PGRXMWNm4
-# 5p+G7iraTsbyo4lrHVg2hE00ynARid6MMs39PpyCqPvItCRoKu3p6ep0a6fyHIG5
-# NaCLSEJs0RYu
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFO6CILpl3XOBaB8K5Ol4
+# vIXh8KJ1MA0GCSqGSIb3DQEBAQUABIICAB9IksLLv/zHy6rggx/jJyLbTJ4tFZJn
+# KxLdSLnzEoPZ+qZZT2mXYL6GM/g9A4emx5dvN+UyaQ/NRqiBorc6RCYdSVYPyJSK
+# gjpSOusDUxmF9kM3PFmTFsWSrsmCVZdK0UUt0TZUjRQ9dor6krIuCV+uuaFouOvn
+# h0+2SXWdsed1Q3jmSdPR0OFI1Q6XhJzfGmUoJCWN39GWhKQ2mH606Ia1A5tPvzWK
+# VAOfT1AoG0Gi/7Jbxq/3G4lxvLlkaJ3Q5c5pal0PtJFQeBjXX7UMe06zg02BZYAX
+# ehwJgR1EuoQwc54NHdIFrpTB7RHsZdQFpKJ5HVf0zv7dPSNCSCIAc6JJhr900u9D
+# qmopZp+yndApGdsVnwTUZ0BzU7fLnaG1haTKsU5nBIHEn7ashd9oAApYTn8Apmbi
+# 9Hw8fvwjvefFxwbQLManxe7rgzWi2y3PcfucY/E9IM5Wb3c6m2nByTlCiGbF37rr
+# G/km7/GKGdhSW2YoISMVzASVlBLEk5NcK/vc+9OhrDJxnkNc36IU60ffLHVCiOdo
+# Ri6GM5nmTYsetgtHR2Ktt0Bd4FzoYz9VciHLm1CnXfemk3KNCXIaAYfDinbjOmA2
+# cTCGzuBx7EHX5f7Ifob1CuVv3UvpJprmrdvzlv1CjdS6baLEjd8WTXHHQ3/OMTdx
+# WLH4JY//4WPz
 # SIG # End signature block
