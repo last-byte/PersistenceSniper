@@ -21,6 +21,14 @@ Why writing such a tool, you might ask. Well, for starters, I tried looking arou
 ## The How
 To learn how to use PersistenceSniper properly, head to the [Project's Wiki](https://github.com/last-byte/PersistenceSniper/wiki).
 
+__TL;DR__
+If you are too lazy to read the [Wiki](https://github.com/last-byte/PersistenceSniper/wiki) (which I highly recommend you do) you can install, import, and fire PersistenceSniper with the following three commands.
+```powershell
+PS> Install-Module PersistenceSniper
+PS> Import-Module PersistenceSniper
+PS> Find-AllPersistence
+```
+
 ## Persistence techniques implemented so far
 The persistence techniques implemented so far are detailed in the [Detections Page](https://github.com/last-byte/PersistenceSniper/wiki/3-%E2%80%90-Detections) of PersistenceSniper's Wiki.
 
