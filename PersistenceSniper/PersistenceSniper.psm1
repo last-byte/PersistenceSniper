@@ -1221,7 +1221,12 @@ function Find-AllPersistence {
         if ($passwordFilters) {
           $dlls = $passwordFilters.'Notification Packages' -split '\s+'
           foreach ($dll in $dlls) {
-            $dllPath = "C:\Windows\System32\$dll.dll"
+            if ($dll -like "*.dll") {
+                $dllPath = "C:\Windows\System32\$dll"
+            }
+            else {
+                $dllPath = "C:\Windows\System32\$dll.dll"
+            }
             if ((Get-IfSafeLibrary $dllPath) -EQ $false) {
               Write-Verbose -Message "$hostname - [!] Found a LSA password filter DLL under the $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Control\Lsa\Notification Packages property which points to a non-OS DLL!"
               $propPath = (Convert-Path -Path $passwordFilters.PSPath) + '\Notification Packages'
