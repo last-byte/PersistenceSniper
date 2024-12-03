@@ -1,5 +1,9 @@
 # Changelog
-## 1.16.1
+## 1.16.3
+Fixes:
+   - Fixed a bug in the remote computer execution which, under certain circumstances, prevented the proper execution of the module 
+
+## 1.16.2
 Fixes:
    - Fixed a bug in the remote computer execution which, under certain circumstances, prevented the proper execution of the module 
    - Fixed a bug in the handling of the LSA Notification Package detection (see PR #27)

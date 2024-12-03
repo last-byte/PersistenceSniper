@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.16.2
+    .VERSION 1.16.3
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -188,11 +188,14 @@ function Find-AllPersistence {
   
   $ScriptBlock = 
   {
-    if ($ComputerName) {
+
+    
+
+    if ($PSSenderInfo) {
       $PersistenceMethod = $Using:PersistenceMethod
       $VerbosePreference = $Using:VerbosePreference
     }
-    
+
     $ErrorActionPreference = 'SilentlyContinue'
     $hostname = ([Net.Dns]::GetHostByName($env:computerName)).HostName
     $psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
@@ -2446,8 +2449,8 @@ function Find-AllPersistence {
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqyLvdXcEKTdX9FIg2NUX11XX
-# wTmgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUIUMfrfd3ixeru6pEa8XuSpFv
+# K12gghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2547,17 +2550,17 @@ function Find-AllPersistence {
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFIUztCW7+cO7MtLBKxnO
-# CUN/ys76MA0GCSqGSIb3DQEBAQUABIICABS9/ZkiWiPpgffGcFMxPbIKSUxeNZI1
-# 8XotdUKVoVXvNS4DM8N0AeFaOFHJxIwJbx9pQTxapaWRd48o/LmzcEW956bTcD1Q
-# 4W8P4tUsajersEarDoPr5ZhVGchphGSODqaHsQDK3aBO4dptipNfH2vnORhuopou
-# lusxaXXwc0hEHIDeMRXYuK5ayJtgzpdr7Tl5425iQ+/PRGBwjg14lHQ66jAdkGPV
-# Oskwc96o8TXYDZV/IZbYZYJJ0LCkX7h6P5wmOwA8aNwPtuDh+Z1cu7HEjbLTDjI/
-# oZDHGn9N1VHX2D3gFQKb2eRKP1AfZhKueStIHBDh1FbqhaVEo9bAlqi9C4olyTCe
-# lq3hI1hszHU1MpdF7Guv/DwZTtW9DWD4BSX5aQNgzpdarermVrHDWzZ6ko00UruU
-# XErd8ltHTqISoDO4mXomu1iEneHCFXj3AftvWVTWFYUlvM3/Ppd/PgMA7g3UB0lC
-# ElgwooMn8rGxFwca7Cxq1fKG2MZQDnpMSSxeTLvhLJ81YISr3usdkiJI7rsaqYhM
-# Dq50t9TFTm5k3T2xEJIUSEUmIwSogGw7FbHerrozabdQKZCyRE9efMQOn7wFCNW6
-# AJoWa4Okoujb6lShchwZhVTUMODnwEnl0YGYGNZcCsLSs/DKVt8FJDWnMIYHu1H+
-# fsQu1ebSoMvr
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFKvcI4ubCUzcSkdEZPRh
+# R7geeivCMA0GCSqGSIb3DQEBAQUABIICAD7GjTD0NrKeLcGn5e1iN4IEAQZslNzN
+# JtfX0uYRSc3qS9SaK04/OH5eEu+COktketgvGCuV9IMURCo9OGzcC1WvYgxXlYGb
+# 6o82wKejWFcenpC3peYpknVBaGEhP7S8Fm5ROXej2RuyuNvN/SEkL2VnY6r40GAv
+# 3ShXZzQqt8PLdJhZa1aIJ/Snx6SyS+4BwI/kj8wRGQ7COOL6TTZzNiKd2Z0BAdee
+# ovxxaLCpXzJNxjeHc7mJibwVo1fuNYsVJ5akcGR5yqfuoto1GMeE/pjE/7BHSj4K
+# npBqCV18Kca4gj7JieYbe2BSjxmy8SLk7Z2OEN+3eJCPNpx7PWlyqGN20dFuFJij
+# d8tHdkSgC6lrOs5Fm0XG06GFP0CIG/kHwYl7E3ZAjlpbDOPXiZ1ai36R4HskOimp
+# jfWOR8WNocJWca1+bGPDt80FsKasqJ7MQVDZH6Hx4a3B9No4sToO9HCguQeIP717
+# xOF959hlOY9ZwTN3ioDCwo0IzIFJpCpUXQNwkJ90IR+oo95nAKjTSBB/y17EkIlL
+# ehdo+eVAnMyDlXEDAvtu6FWdbLe6G4E07vDQ5UmTWvJ+WSknXPZTYrXkqRASpzEo
+# p5xBK1Q03S4NUv/JFbUiUOQoNvCMDpCxiPdAf5KFSc++f65tQsKNT/KVvtkkWkdf
+# jeKdpk6zlHzG
 # SIG # End signature block
