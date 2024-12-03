@@ -1,6 +1,11 @@
 # Changelog
 ## 1.16.1
 Fixes:
+   - Fixed a bug in the remote computer execution which, under certain circumstances, prevented the proper execution of the module 
+   - Fixed a bug in the handling of the LSA Notification Package detection (see PR #27)
+
+## 1.16.1
+Fixes:
    - Fixed a bug in the Ghost Task function which under certain circumstances prevented the detection of the technique 
 
 ## 1.16.0

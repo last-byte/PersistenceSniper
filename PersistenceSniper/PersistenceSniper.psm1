@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.16.1
+    .VERSION 1.16.2
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -10,7 +10,7 @@
 
     .COPYRIGHT Commons Clause
 
-    .TAGS Windows Registry Persistence Detection Blue Purple Red Team Incident Response DFIR IR Forensics AMSI Powershell
+    .TAGS Windows Registry Persistence Detection Blue Purple Red Team Incident Response DFIR IR Forensics AMSI Powershell Ghosttask Run RunOnce Key Hive Property Cmd 
 
     .LICENSEURI https://github.com/last-byte/PersistenceSniper/blob/main/LICENSE
 
@@ -188,8 +188,12 @@ function Find-AllPersistence {
   
   $ScriptBlock = 
   {
+    if ($ComputerName) {
+      $PersistenceMethod = $Using:PersistenceMethod
+      $VerbosePreference = $Using:VerbosePreference
+    }
+    
     $ErrorActionPreference = 'SilentlyContinue'
-    $VerbosePreference = $Using:VerbosePreference
     $hostname = ([Net.Dns]::GetHostByName($env:computerName)).HostName
     $psProperties = @('PSChildName', 'PSDrive', 'PSParentPath', 'PSPath', 'PSProvider')
     $persistenceObjectArray = [Collections.ArrayList]::new()
@@ -1221,7 +1225,13 @@ function Find-AllPersistence {
         if ($passwordFilters) {
           $dlls = $passwordFilters.'Notification Packages' -split '\s+'
           foreach ($dll in $dlls) {
-            $dllPath = "C:\Windows\System32\$dll.dll"
+            if ($dll -like "*.dll") {
+              $dllPath = "C:\Windows\System32\$dll"
+            }
+            else {
+              $dllPath = "C:\Windows\System32\$dll.dll"
+            }
+
             if ((Get-IfSafeLibrary $dllPath) -EQ $false) {
               Write-Verbose -Message "$hostname - [!] Found a LSA password filter DLL under the $(Convert-Path -Path $hive)\SYSTEM\CurrentControlSet\Control\Lsa\Notification Packages property which points to a non-OS DLL!"
               $propPath = (Convert-Path -Path $passwordFilters.PSPath) + '\Notification Packages'
@@ -2382,21 +2392,24 @@ function Find-AllPersistence {
       Out-EventLog $persistenceObjectArray
     }
     
-    # Save all the techniques found on this machine in the global array.
-    foreach ($finding in $persistenceObjectArray) {
-      $null = $globalPersistenceObjectArray.Add($finding)
-    }
-    
     Write-Verbose -Message "$hostname - Execution finished, outputting results..."
+    $persistenceObjectArray
   }
   
   if ($ComputerName) {
-    Invoke-Command -ComputerName $ComputerName -ScriptBlock $ScriptBlock -ErrorAction Continue
+    $returnedArray = Invoke-Command -ComputerName $ComputerName -ScriptBlock $ScriptBlock -ErrorAction Continue
+    # Save all the techniques found on the remote machines in the global array.
+    foreach ($finding in $returnedArray) {
+      $null = $globalPersistenceObjectArray.Add($finding)
+    }
   }
   else {
-    Invoke-Command -ScriptBlock $ScriptBlock
+    $returnedArray = Invoke-Command -ScriptBlock $ScriptBlock
+    # Save all the techniques found on this machine in the global array.
+    foreach ($finding in $returnedArray) {
+      $null = $globalPersistenceObjectArray.Add($finding)
+    }
   }
-  
   
   # Use input CSV to make a diff of the results and only show us the persistences implanted on the machine which are not in the CSV
   if ($DiffCSV) {
@@ -2430,12 +2443,11 @@ function Find-AllPersistence {
   
   Write-Verbose -Message 'Module execution finished.'  
 }
-
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQURT02u7GdzTS2tsva5puSrR32
-# 6BagghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqyLvdXcEKTdX9FIg2NUX11XX
+# wTmgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2535,17 +2547,17 @@ function Find-AllPersistence {
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFO6CILpl3XOBaB8K5Ol4
-# vIXh8KJ1MA0GCSqGSIb3DQEBAQUABIICAB9IksLLv/zHy6rggx/jJyLbTJ4tFZJn
-# KxLdSLnzEoPZ+qZZT2mXYL6GM/g9A4emx5dvN+UyaQ/NRqiBorc6RCYdSVYPyJSK
-# gjpSOusDUxmF9kM3PFmTFsWSrsmCVZdK0UUt0TZUjRQ9dor6krIuCV+uuaFouOvn
-# h0+2SXWdsed1Q3jmSdPR0OFI1Q6XhJzfGmUoJCWN39GWhKQ2mH606Ia1A5tPvzWK
-# VAOfT1AoG0Gi/7Jbxq/3G4lxvLlkaJ3Q5c5pal0PtJFQeBjXX7UMe06zg02BZYAX
-# ehwJgR1EuoQwc54NHdIFrpTB7RHsZdQFpKJ5HVf0zv7dPSNCSCIAc6JJhr900u9D
-# qmopZp+yndApGdsVnwTUZ0BzU7fLnaG1haTKsU5nBIHEn7ashd9oAApYTn8Apmbi
-# 9Hw8fvwjvefFxwbQLManxe7rgzWi2y3PcfucY/E9IM5Wb3c6m2nByTlCiGbF37rr
-# G/km7/GKGdhSW2YoISMVzASVlBLEk5NcK/vc+9OhrDJxnkNc36IU60ffLHVCiOdo
-# Ri6GM5nmTYsetgtHR2Ktt0Bd4FzoYz9VciHLm1CnXfemk3KNCXIaAYfDinbjOmA2
-# cTCGzuBx7EHX5f7Ifob1CuVv3UvpJprmrdvzlv1CjdS6baLEjd8WTXHHQ3/OMTdx
-# WLH4JY//4WPz
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFIUztCW7+cO7MtLBKxnO
+# CUN/ys76MA0GCSqGSIb3DQEBAQUABIICABS9/ZkiWiPpgffGcFMxPbIKSUxeNZI1
+# 8XotdUKVoVXvNS4DM8N0AeFaOFHJxIwJbx9pQTxapaWRd48o/LmzcEW956bTcD1Q
+# 4W8P4tUsajersEarDoPr5ZhVGchphGSODqaHsQDK3aBO4dptipNfH2vnORhuopou
+# lusxaXXwc0hEHIDeMRXYuK5ayJtgzpdr7Tl5425iQ+/PRGBwjg14lHQ66jAdkGPV
+# Oskwc96o8TXYDZV/IZbYZYJJ0LCkX7h6P5wmOwA8aNwPtuDh+Z1cu7HEjbLTDjI/
+# oZDHGn9N1VHX2D3gFQKb2eRKP1AfZhKueStIHBDh1FbqhaVEo9bAlqi9C4olyTCe
+# lq3hI1hszHU1MpdF7Guv/DwZTtW9DWD4BSX5aQNgzpdarermVrHDWzZ6ko00UruU
+# XErd8ltHTqISoDO4mXomu1iEneHCFXj3AftvWVTWFYUlvM3/Ppd/PgMA7g3UB0lC
+# ElgwooMn8rGxFwca7Cxq1fKG2MZQDnpMSSxeTLvhLJ81YISr3usdkiJI7rsaqYhM
+# Dq50t9TFTm5k3T2xEJIUSEUmIwSogGw7FbHerrozabdQKZCyRE9efMQOn7wFCNW6
+# AJoWa4Okoujb6lShchwZhVTUMODnwEnl0YGYGNZcCsLSs/DKVt8FJDWnMIYHu1H+
+# fsQu1ebSoMvr
 # SIG # End signature block
