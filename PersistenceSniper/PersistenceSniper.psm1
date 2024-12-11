@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.17.0
+    .VERSION 1.17.1
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -2012,12 +2012,13 @@ function Find-AllPersistence {
                 if ($exe -eq "*") {
                     continue
                 }
-
-                if ($exe -like "*.exe") {
-                    $exePath = "C:\Windows\System32\$exe"
+                
+                if (([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($exe))) -eq $false) {
+                  $exePath = "C:\Windows\System32\$exe"
                 }
-                else {
-                    $exePath = "C:\Windows\System32\$exe.exe"
+                else
+                {
+                  $exePath = $exe
                 }
 
                 if ((Get-IfSafeExecutable $exePath) -EQ $false) {
@@ -2034,13 +2035,13 @@ function Find-AllPersistence {
         if ($exesProp) {
             $exes = $exesProp.'BootExecuteNoPnpSync' -split '\s+'
             foreach ($exe in $exes) {
-                if ($exe -like "*.exe") {
-                    $exePath = "C:\Windows\System32\$exe"
+                if (([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($exe))) -eq $false) {
+                  $exePath = "C:\Windows\System32\$exe"
                 }
-                else {
-                    $exePath = "C:\Windows\System32\$exe.exe"
+                else
+                {
+                  $exePath = $exe
                 }
-
                 if ((Get-IfSafeExecutable $exePath) -EQ $false) {
                     Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\BootExecuteNoPnpSync property"
                     $propPath = (Convert-Path -Path $exesProp.PSPath) + '\BootExecuteNoPnpSync'
@@ -2053,6 +2054,7 @@ function Find-AllPersistence {
     }    
       
     function Get-NetshHelperDLL {
+        Write-Verbose -Message "$hostname - Getting Netsh Helper DLLs"
         $props = Get-Item 'HKLM:\SOFTWARE\Microsoft\NetSh' | Select-Object -ExpandProperty Property 
         foreach ($prop in $props) {
             $dll = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\NetSh')."$prop"
@@ -2069,15 +2071,17 @@ function Find-AllPersistence {
     }     
       
     function Get-SetupExecute {
+        Write-Verbose -Message "$hostname - Getting SetupExecute and SetupExecuteNoPnpSync executables"
         $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'SetupExecute' 
         if ($exesProp) {
             $exes = $exesProp.'SetupExecute' -split '\s+'
             foreach ($exe in $exes) {
-                if ($exe -like "*.exe") {
-                    $exePath = "C:\Windows\System32\$exe"
+                if (([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($exe))) -eq $false) {
+                  $exePath = "C:\Windows\System32\$exe"
                 }
-                else {
-                    $exePath = "C:\Windows\System32\$exe.exe"
+                else
+                {
+                  $exePath = $exe
                 }
 
                 if ((Get-IfSafeExecutable $exePath) -EQ $false) {
@@ -2089,18 +2093,41 @@ function Find-AllPersistence {
             }
         }
         Write-Verbose -Message ''    
+
+        $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'SetupExecuteNoPnpSync' 
+        if ($exesProp) {
+            $exes = $exesProp.'SetupExecuteNoPnpSync' -split '\s+'
+            foreach ($exe in $exes) {
+                if (([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($exe))) -eq $false) {
+                  $exePath = "C:\Windows\System32\$exe"
+                }
+                else
+                {
+                  $exePath = $exe
+                }
+
+                if ((Get-IfSafeExecutable $exePath) -EQ $false) {
+                    Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\SetupExecuteNoPnpSync property"
+                    $propPath = (Convert-Path -Path $exesProp.PSPath) + '\SetupExecuteNoPnpSync'
+                    $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'SetupExecuteNoPnpSync Binary' -Classification 'Uncatalogued Technique N.20' -Path $propPath -Value $exePath -AccessGained 'System' -Note 'The executables specified in the "SetupExecuteNoPnpSync" property of the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager key are loaded by the OS before any other process, including EDRs.' -Reference 'https://github.com/rad9800/BootExecuteEDR'
+                    $null = $persistenceObjectArray.Add($PersistenceObject)
+                }
+            }
+        }
     }     
       
     function Get-PlatformExecute {
+        Write-Verbose -Message "$hostname - Getting PlatformExecute executables"
         $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'PlatformExecute' 
         if ($exesProp) {
             $exes = $exesProp.'PlatformExecute' -split '\s+'
             foreach ($exe in $exes) {
-                if ($exe -like "*.exe") {
-                    $exePath = "C:\Windows\System32\$exe"
+                if (([System.IO.Path]::IsPathRooted([System.Environment]::ExpandEnvironmentVariables($exe))) -eq $false) {
+                  $exePath = "C:\Windows\System32\$exe"
                 }
-                else {
-                    $exePath = "C:\Windows\System32\$exe.exe"
+                else
+                {
+                  $exePath = $exe
                 }
 
                 if ((Get-IfSafeExecutable $exePath) -EQ $false) {
@@ -2591,12 +2618,11 @@ function Find-AllPersistence {
   
   Write-Verbose -Message 'Module execution finished.'  
 }
-
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU2AMLG/6kaZeZg5jMmp6TQXQq
-# BwegghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUAd5By56s4SERLveuQihdaRrn
+# hlmgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2696,17 +2722,17 @@ function Find-AllPersistence {
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFNRWktTrzCqbIbaCV8/e
-# YWgurXYiMA0GCSqGSIb3DQEBAQUABIICADev3hFAk8V7YSgdu8aldgy4wJDT3nGe
-# 9PJS8Gc8ioYn149tXONm8xqsDR7UyX9TND5QT6GusbTtaHzDrjp0itjH0WnlqdbR
-# zkG0BmSGQbPEhoxG8BpThvB44c7dhVG3aZ0c4//CLuGuhwygdSAifE2cftVoOWc2
-# XyzQoohtYUZGvwYIiB9Cf6bbwiSsxwexl0mR/K6ZZAzBsHmqmiKSQ3hTg+jF+cnC
-# wzk5DFyyT96Gr00Shac1dG56PccqlMy+zki5vn+IP8sD+/cjIWK1dxoR6kt01rSY
-# tjYOkuVzUbkxcwTYoGl8/PCxmy16wKYCg0dG8xTDyFq7LRgf3vwn1mEtqDwGfdcg
-# bWwRhg/DWToICNQXFdgmUokmLOcZ1jOqUg1kMqxJ34m9RbKFh+U4nBhzGOl5de+x
-# D1EZk7IFo9z4jr3KK8HIzbbpbNSGnA6oaHHLf6D9cjjrXPt/XlRY9mc0gfYGoTD1
-# lT8ESJn3SItLgfTASOCAZweQGLBm7CT1XGM58ll4YLls/oIXUBEVbCeiDDLgIghD
-# lAaUORJXmAG4Wg2DlyziOGEEyYFSPkDuX/Pd8ATaY1NzrskkPt3EFKMVMhUu8ryv
-# vhkmj36pb/aNCuxNNaeMd+Mqunszt0wjxw0sTMWBJ4SLFeEMwh2XvKXPNz/4ith9
-# 1polcpknHvN2
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFNx6PcNOyGT7bxM73lF+
+# buEOIc73MA0GCSqGSIb3DQEBAQUABIICADIOHpYaO7YIe6IZavtE8/X0vu3KLt9L
+# HRcUu4YUcf7Zs9nIHHP82myxWWxXqEI+MU9h4+FNgzvFp5X2gF+NUpyEii17VCW1
+# +HOc6LO5NCglBUwlO6LmqneibEYgNrNKMMTrHe6M8Ulx3PI3SETUg6bYhKm0R/G4
+# hMqOXZ8NGQiSni5H1dTQR/PwK43TSem+dC1KzHjnzR/S5vMmqZyd8KsPD9XqnGTy
+# gXgOoj5TgnODnBDAw/vcTx0mmdTsIriPX40OMlKgzfS7hiB5JtmlAg7Jc+ycb+ti
+# uHx/6Qdxlh08Z6hbR8KwaEUvgZmcZSszlZeo3peeQu0nmQYT2DEcn3sN0c8yl+gT
+# LV67OYtTy+vI9TfY8a57NmU07Sn/uDC044nmXbQ+AGR1EVnpqgVetswxIldj5GIx
+# m+p0qC236EqTMbcHZ37RdAaEmUbN+6TFgmwAiupAMkoEDlEfI2mu4eQ+abNGt/uC
+# 7Z3NnFNCKZLgDr1MA8sbOG8Q3aGQZxCIYKu+IJr7YnHqyXAQ063EKuRs1tAguojn
+# dDtrPeRiK3O19tfnKFbNemsunTOvQpEvyrR2JvBmZCtRqyekcDEUphTglVmPRjlC
+# BKgwtdHkxihniBrCzbrQ8pM+2ElrsdvDLLyMxBLfl21WFYbfT6F2s21j8i2pz8i9
+# 5kJ5Pcls70on
 # SIG # End signature block

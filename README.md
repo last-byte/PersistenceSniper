@@ -39,13 +39,14 @@ Most of this tool is based on the work of other skilled researchers, so it's rig
 - All the other researchers who disclosed cool and unknown persistence techniques.
 
 Furthermore, these people contributed to the project:
-- [Riccardo Ancarani](https://twitter.com/dottor_morte)
-- [Cecio](https://twitter.com/red5heep)
-- [Vadim](https://twitter.com/D3F7A5105)
-- [fkadibs](https://twitter.com/fkadibs)
+- [Riccardo Ancarani](https://x.com/dottor_morte)
+- [Cecio](https://x.com/red5heep)
+- [Vadim](https://x.com/D3F7A5105)
+- [fkadibs](https://x.com/fkadibs)
 - [suinswofi](https://github.com/suinswofi)
 - [Antonio Blescia](https://github.com/ablescia)
-- [Strassi](https://twitter.com/strassi7)
+- [Strassi](https://x.com/strassi7)
+- [sixtyvividtails](https://x.com/sixtyvividtails)
 
 I'd also like to give credits to my fellow mates at [@APTortellini](https://aptw.tf/about/) for the flood of ideas that helped it grow from a puny text-oriented script to a full-fledged Powershell module.
 

@@ -1,4 +1,9 @@
 # Changelog
+## 1.17.1
+Features:
+   - Detection for SetupExecuteNoPnpSync
+   - Enhanced detection for techniques implemented in 1.17.1 (expanded search outside of System32 - credit @sixtyvividtails)
+
 ## 1.17.0
 Features:
    - Detection for BootExecute and BootExecuteNoPnpSync 
