@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-    .VERSION 1.16.3
+    .VERSION 1.17.0
 
     .GUID 3ce01128-01f1-4503-8f7f-2e50deb56ebc
 
@@ -24,7 +24,7 @@
 
     .EXTERNALSCRIPTDEPENDENCIES
 
-    .RELEASENOTES Check the CHANGELOG available at the Github Repository.
+    .RELEASENOTES Check the CHANGELOG on the Github Repository.
 
     .PRIVATEDATA
 
@@ -154,7 +154,11 @@ function Find-AllPersistence {
       'DSRMBackdoor',
       'GhostTask',
       'BootVerificationProgram',
-      'AppInitDLLs'
+      'AppInitDLLs',
+      'BootExecute',
+      'NetshHelperDLL',
+      'SetupExecute',
+      'PlatformExecute'
     )]
     $PersistenceMethod = 'All',
      
@@ -1991,6 +1995,126 @@ function Find-AllPersistence {
       Write-Verbose -Message '' 
     }
 
+    function Get-BootExecute {
+        Write-Verbose -Message "$hostname - Getting BootExecute and BootExecuteNoPnpSync executables"
+        $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'BootExecute' 
+        if ($exesProp) {
+            $exes = $exesProp.'BootExecute' -split '\s+'
+            foreach ($exe in $exes) {
+                if ($exe -eq "autocheck") {
+                    continue
+                }
+
+                if ($exe -eq "autochk") {
+                    continue
+                }
+
+                if ($exe -eq "*") {
+                    continue
+                }
+
+                if ($exe -like "*.exe") {
+                    $exePath = "C:\Windows\System32\$exe"
+                }
+                else {
+                    $exePath = "C:\Windows\System32\$exe.exe"
+                }
+
+                if ((Get-IfSafeExecutable $exePath) -EQ $false) {
+                    Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\BootExecute property"
+                    $propPath = (Convert-Path -Path $exesProp.PSPath) + '\BootExecute'
+                    $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'BootExecute Binary' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $exePath -AccessGained 'System' -Note 'The executables specified in the "BootExecute" property of the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager key are loaded by the OS before any other process, including EDRs.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+                    $null = $persistenceObjectArray.Add($PersistenceObject)
+                }
+            }
+        }
+
+        Write-Verbose -Message ''
+        $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'BootExecuteNoPnpSync' 
+        if ($exesProp) {
+            $exes = $exesProp.'BootExecuteNoPnpSync' -split '\s+'
+            foreach ($exe in $exes) {
+                if ($exe -like "*.exe") {
+                    $exePath = "C:\Windows\System32\$exe"
+                }
+                else {
+                    $exePath = "C:\Windows\System32\$exe.exe"
+                }
+
+                if ((Get-IfSafeExecutable $exePath) -EQ $false) {
+                    Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\BootExecuteNoPnpSync property"
+                    $propPath = (Convert-Path -Path $exesProp.PSPath) + '\BootExecuteNoPnpSync'
+                    $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'BootExecuteNoPnpSync Binary' -Classification 'MITRE ATT&CK T1547.001' -Path $propPath -Value $exePath -AccessGained 'System' -Note 'The executables specified in the "BootExecuteNoPnpSync" property of the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager key are loaded by the OS before any other process, including EDRs.' -Reference 'https://attack.mitre.org/techniques/T1547/001/'
+                    $null = $persistenceObjectArray.Add($PersistenceObject)
+                }
+            }
+        }
+        Write-Verbose -Message ''
+    }    
+      
+    function Get-NetshHelperDLL {
+        $props = Get-Item 'HKLM:\SOFTWARE\Microsoft\NetSh' | Select-Object -ExpandProperty Property 
+        foreach ($prop in $props) {
+            $dll = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\NetSh')."$prop"
+            $dllProp = "C:\Windows\System32\$dll"
+
+            if ((Get-IfSafeLibrary $dllProp) -EQ $false) {
+                Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SOFTWARE\Microsoft\NetSh\$prop property"
+                $propPath = "HKLM\SOFTWARE\Microsoft\NetSh\$prop"
+                $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'Netsh Helper DLL' -Classification 'MITRE ATT&CK T1546.007' -Path $propPath -Value $dllProp -AccessGained 'System/User' -Note 'The DLLs specified in the properties of the  HKLM\SOFTWARE\Microsoft\NetSh key are loaded by netsh.exe whenever it is started.' -Reference 'https://attack.mitre.org/techniques/T1546/007/'
+                $null = $persistenceObjectArray.Add($PersistenceObject)
+            }
+        }
+        Write-Verbose -Message ''
+    }     
+      
+    function Get-SetupExecute {
+        $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'SetupExecute' 
+        if ($exesProp) {
+            $exes = $exesProp.'SetupExecute' -split '\s+'
+            foreach ($exe in $exes) {
+                if ($exe -like "*.exe") {
+                    $exePath = "C:\Windows\System32\$exe"
+                }
+                else {
+                    $exePath = "C:\Windows\System32\$exe.exe"
+                }
+
+                if ((Get-IfSafeExecutable $exePath) -EQ $false) {
+                    Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\SetupExecute property"
+                    $propPath = (Convert-Path -Path $exesProp.PSPath) + '\SetupExecute'
+                    $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'SetupExecute Binary' -Classification 'Uncatalogued Technique N.20' -Path $propPath -Value $exePath -AccessGained 'System' -Note 'The executables specified in the "SetupExecute" property of the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager key are loaded by the OS before any other process, including EDRs.' -Reference 'https://github.com/rad9800/BootExecuteEDR'
+                    $null = $persistenceObjectArray.Add($PersistenceObject)
+                }
+            }
+        }
+        Write-Verbose -Message ''    
+    }     
+      
+    function Get-PlatformExecute {
+        $exesProp = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name 'PlatformExecute' 
+        if ($exesProp) {
+            $exes = $exesProp.'PlatformExecute' -split '\s+'
+            foreach ($exe in $exes) {
+                if ($exe -like "*.exe") {
+                    $exePath = "C:\Windows\System32\$exe"
+                }
+                else {
+                    $exePath = "C:\Windows\System32\$exe.exe"
+                }
+
+                if ((Get-IfSafeExecutable $exePath) -EQ $false) {
+                    Write-Verbose -Message "$hostname - [!] Found a potentially malicious entry in the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\PlatformExecute property"
+                    $propPath = (Convert-Path -Path $exesProp.PSPath) + '\PlatformExecute'
+                    $PersistenceObject = New-PersistenceObject -Hostname $hostname -Technique 'PlatformExecute Binary' -Classification 'Uncatalogued Technique N.21' -Path $propPath -Value $exePath -AccessGained 'System' -Note 'The executables specified in the "PlatformExecute" property of the HKLM\SYSTEM\CurrentControlSet\Control\Session Manager key are loaded by the OS before any other process, including EDRs.' -Reference 'https://github.com/rad9800/BootExecuteEDR'
+                    $null = $persistenceObjectArray.Add($PersistenceObject)
+                }
+            }
+        }
+        Write-Verbose -Message ''    
+    }
+
+
     function Out-EventLog {
 
       Param (
@@ -2059,6 +2183,10 @@ function Find-AllPersistence {
           'GhostTask'                                                 = $null
           'BootVerificationProgram'                                   = $null
           'AppInitDLLs'                                               = $null
+          'BootExecute'                                               = $null
+          'NetshHelperDLL'                                            = $null
+          'SetupExecute'                                              = $null
+          'PlatformExecute'                                           = $null
         }
 
         # Collect the keys in a separate list
@@ -2146,6 +2274,10 @@ function Find-AllPersistence {
       Get-GhostTask
       Get-BootVerificationProgram
       Get-AppInitDLLs
+      Get-BootExecute                                              
+      Get-NetshHelperDLL                                            
+      Get-SetupExecute                                            
+      Get-PlatformExecute                                          
       
       if ($IncludeHighFalsePositivesChecks.IsPresent) {
         Write-Verbose -Message "$hostname - You have used the -IncludeHighFalsePositivesChecks switch, this may generate a lot of false positives since it includes checks with results which are difficult to filter programmatically..."
@@ -2383,12 +2515,28 @@ function Find-AllPersistence {
           Get-AppInitDLLs
           break
         }
+        'BootExecute' {
+          Get-BootExecute
+          break
+        }
+        'NetshHelperDLL' {
+          Get-NetshHelperDLL
+          break
+        }
+        'SetupExecute' {
+          Get-SetupExecute
+          break
+        }
+        'PlatformExecute' {
+          Get-PlatformExecute
+          break
+        }      
       }
     }      
         
     
     if ($LogFindings.IsPresent) {
-      Write-Verbose -Message "$hostname - You have used the -LogFindings switch, what's been found on the machine will be saved in the Event Log."
+      Write-Verbose -Message "$hostname - You have used the -LogFindings switch, the results will be saved in the Event Log."
       Out-EventLog $persistenceObjectArray
     }
     
@@ -2443,11 +2591,12 @@ function Find-AllPersistence {
   
   Write-Verbose -Message 'Module execution finished.'  
 }
+
 # SIG # Begin signature block
 # MIIVlQYJKoZIhvcNAQcCoIIVhjCCFYICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUwQc7ywgH4cUYVHh5Soh7NfQ4
-# yjmgghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU2AMLG/6kaZeZg5jMmp6TQXQq
+# BwegghH1MIIFbzCCBFegAwIBAgIQSPyTtGBVlI02p8mKidaUFjANBgkqhkiG9w0B
 # AQwFADB7MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVy
 # MRAwDgYDVQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEh
 # MB8GA1UEAwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTIxMDUyNTAwMDAw
@@ -2547,17 +2696,17 @@ function Find-AllPersistence {
 # ZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIzNgIR
 # ANqGcyslm0jf1LAmu7gf13AwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAI
 # oAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB
-# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFOBKd9JIgqs+7GGgu8J1
-# nIMQu41IMA0GCSqGSIb3DQEBAQUABIICAG4CpFHpN3zAH7N+S6c2TTWYzm+SyTW3
-# d9bsXfWgFZHPeYjc9Z6t4UnbMeCW88eLnPHM/+urzyJ4NWKFLc97FwT7on2Pte4r
-# 3EK2RWtp8BaZ0l/YMusAt0tLiHBR0N3MK/5KQFYjeH1HS5NzNO/gdna7g3aEUtAb
-# p+klO7Dosu0YeYKBovLA11yDtmX/6w4qODVVT4SEs/DUVGQVjobHYxFuSr0qx+4p
-# if4v/s1XcjhRxFqZLJWn0Q2siA4m93E7WIwEymRUWqjrlt28EEfCDMXpDjHICA+j
-# 5rX+TDRISIz8j49dK4kIW+s3iJldxn2ZUq2XUKSkWvvaRF/A/iVc7cCrhRZINFex
-# rqt2CHDuJIQH1VWodzU8nhLAPv9Wb+sB1zsLdZ6KA6fCn9MGn4WeG0sGN4IF+r4A
-# dyUx5cxoWQI5a0w0h/YzOScYxkXr3/AVsnpdV3evERaX4XKSGvNxDhRRM+7KOC2p
-# gl2zYzMOs/VjYhYr7bSs19yVCnUsEBs/ndrGET28bYP7m+JUGyJqZFHyKyKS/NCp
-# EPqO8diaKdHi/7EXMrTWD8kIb8H6RMyauhm5RozqmsCUv36MMr7l8VNZHAsXj/ZJ
-# /9cMyRzo2Jh9/zdnZs1qz+OIaqmOOlLcO5MWBlj3UwwFURHeEPLU+RXQLPxiwVzy
-# HA6651mBKEF5
+# CzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFNRWktTrzCqbIbaCV8/e
+# YWgurXYiMA0GCSqGSIb3DQEBAQUABIICADev3hFAk8V7YSgdu8aldgy4wJDT3nGe
+# 9PJS8Gc8ioYn149tXONm8xqsDR7UyX9TND5QT6GusbTtaHzDrjp0itjH0WnlqdbR
+# zkG0BmSGQbPEhoxG8BpThvB44c7dhVG3aZ0c4//CLuGuhwygdSAifE2cftVoOWc2
+# XyzQoohtYUZGvwYIiB9Cf6bbwiSsxwexl0mR/K6ZZAzBsHmqmiKSQ3hTg+jF+cnC
+# wzk5DFyyT96Gr00Shac1dG56PccqlMy+zki5vn+IP8sD+/cjIWK1dxoR6kt01rSY
+# tjYOkuVzUbkxcwTYoGl8/PCxmy16wKYCg0dG8xTDyFq7LRgf3vwn1mEtqDwGfdcg
+# bWwRhg/DWToICNQXFdgmUokmLOcZ1jOqUg1kMqxJ34m9RbKFh+U4nBhzGOl5de+x
+# D1EZk7IFo9z4jr3KK8HIzbbpbNSGnA6oaHHLf6D9cjjrXPt/XlRY9mc0gfYGoTD1
+# lT8ESJn3SItLgfTASOCAZweQGLBm7CT1XGM58ll4YLls/oIXUBEVbCeiDDLgIghD
+# lAaUORJXmAG4Wg2DlyziOGEEyYFSPkDuX/Pd8ATaY1NzrskkPt3EFKMVMhUu8ryv
+# vhkmj36pb/aNCuxNNaeMd+Mqunszt0wjxw0sTMWBJ4SLFeEMwh2XvKXPNz/4ith9
+# 1polcpknHvN2
 # SIG # End signature block

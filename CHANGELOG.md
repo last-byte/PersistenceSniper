@@ -1,4 +1,11 @@
 # Changelog
+## 1.17.0
+Features:
+   - Detection for BootExecute and BootExecuteNoPnpSync 
+   - Detection for PlatformExecute
+   - Detection for SetupExecute
+   - Detection for Netsh Helper DLL
+
 ## 1.16.3
 Fixes:
    - Fixed a bug in the remote computer execution which, under certain circumstances, prevented the proper execution of the module 
