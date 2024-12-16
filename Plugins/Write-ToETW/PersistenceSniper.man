@@ -1,0 +1,273 @@
+<instrumentationManifest xmlns="http://schemas.microsoft.com/win/2004/08/events">
+ <instrumentation xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events">
+  <events xmlns="http://schemas.microsoft.com/win/2004/08/events">
+<provider name="PersistenceSniper" guid="{4b22d928-e344-5d05-07b4-1b61c575912a}" symbol="PersistenceSniper" resourceFileName="C:\PersistenceSniper\Plugins\Write-ToETW\PersistenceSniper.dll"
+                     messageFileName="C:\PersistenceSniper\Plugins\Write-ToETW\PersistenceSniper.dll">
+ <channels>
+  <channel chid="Operational" name="PersistenceSniper/Operational" value="17" type="Operational" enabled="true"/>
+ </channels>
+ <tasks>
+  <task name="T_RunAndRunOnce" message="$(string.task_RunAndRunOnce)" value="1001"/>
+<task name="T_ImageFileExecutionOptions" message="$(string.task_ImageFileExecutionOptions)" value="1002"/>
+  <task name="T_NLDPDllOverridePath" message="$(string.task_NLDPDllOverridePath)" value="1003"/>
+  <task name="T_AeDebug" message="$(string.task_AeDebug)" value="1004"/>
+  <task name="T_WerFaultHangs" message="$(string.task_WerFaultHangs)" value="1005"/>
+  <task name="T_CmdAutoRun" message="$(string.task_CmdAutoRun)" value="1006"/>
+  <task name="T_ExplorerLoad" message="$(string.task_ExplorerLoad)" value="1007"/>
+  <task name="T_WinlogonUserinit" message="$(string.task_WinlogonUserinit)" value="1008"/>
+  <task name="T_WinlogonShell" message="$(string.task_WinlogonShell)" value="1009"/>
+  <task name="T_TerminalProfileStartOnUserLogin" message="$(string.task_TerminalProfileStartOnUserLogin)" value="1010"/>
+  <task name="T_AppCertDlls" message="$(string.task_AppCertDlls)" value="1011"/>
+  <task name="T_ServiceDlls" message="$(string.task_ServiceDlls)" value="1012"/>
+  <task name="T_GPExtensionDlls" message="$(string.task_GPExtensionDlls)" value="1013"/>
+  <task name="T_WinlogonMPNotify" message="$(string.task_WinlogonMPNotify)" value="1014"/>
+  <task name="T_CHMHelperDll" message="$(string.task_CHMHelperDll)" value="1015"/>
+  <task name="T_HHCtrlHijacking" message="$(string.task_HHCtrlHijacking)" value="1016"/>
+  <task name="T_StartupPrograms" message="$(string.task_StartupPrograms)" value="1017"/>
+  <task name="T_UserInitMprScript" message="$(string.task_UserInitMprScript)" value="1018"/>
+  <task name="T_AutodialDLL" message="$(string.task_AutodialDLL)" value="1019"/>
+  <task name="T_LsaExtensions" message="$(string.task_LsaExtensions)" value="1020"/>
+  <task name="T_ServerLevelPluginDll" message="$(string.task_ServerLevelPluginDll)" value="1021"/>
+  <task name="T_LsaPasswordFilter" message="$(string.task_LsaPasswordFilter)" value="1022"/>
+  <task name="T_LsaAuthenticationPackages" message="$(string.task_LsaAuthenticationPackages)" value="1023"/>
+  <task name="T_LsaSecurityPackages" message="$(string.task_LsaSecurityPackages)" value="1024"/>
+  <task name="T_WinlogonNotificationPackages" message="$(string.task_WinlogonNotificationPackages)" value="1025"/>
+  <task name="T_ExplorerTools" message="$(string.task_ExplorerTools)" value="1026"/>
+  <task name="T_DotNetDebugger" message="$(string.task_DotNetDebugger)" value="1027"/>
+  <task name="T_ErrorHandlerCmd" message="$(string.task_ErrorHandlerCmd)" value="1028"/>
+  <task name="T_WMIEventsSubscrition" message="$(string.task_WMIEventsSubscrition)" value="1029"/>
+  <task name="T_WindowsServices" message="$(string.task_WindowsServices)" value="1030"/>
+  <task name="T_AppPaths" message="$(string.task_AppPaths)" value="1031"/>
+  <task name="T_TerminalServicesInitialProgram" message="$(string.task_TerminalServicesInitialProgram)" value="1032"/>
+  <task name="T_AccessibilityTools" message="$(string.task_AccessibilityTools)" value="1033"/>
+  <task name="T_AMSIProviders" message="$(string.task_AMSIProviders)" value="1034"/>
+  <task name="T_PowershellProfiles" message="$(string.task_PowershellProfiles)" value="1035"/>
+  <task name="T_SilentExitMonitor" message="$(string.task_SilentExitMonitor)" value="1036"/>
+  <task name="T_TelemetryController" message="$(string.task_TelemetryController)" value="1037"/>
+  <task name="T_RDPWDSStartupPrograms" message="$(string.task_RDPWDSStartupPrograms)" value="1038"/>
+  <task name="T_ScheduledTasks" message="$(string.task_ScheduledTasks)" value="1039"/>
+  <task name="T_BitsJobsNotify" message="$(string.task_BitsJobsNotify)" value="1040"/>
+  <task name="T_Screensaver" message="$(string.task_Screensaver)" value="1041"/>
+  <task name="T_PowerAutomate" message="$(string.task_PowerAutomate)" value="1042"/>
+  <task name="T_OfficeAddinsAndTemplates" message="$(string.task_OfficeAddinsAndTemplates)" value="1043"/>
+  <task name="T_Services" message="$(string.task_Services)" value="1044"/>
+  <task name="T_ExplorerContextMenu" message="$(string.task_ExplorerContextMenu)" value="1045"/>
+  <task name="T_ServiceControlManagerSD" message="$(string.task_ServiceControlManagerSD)" value="1046"/>
+  <task name="T_OfficeAiHijacking" message="$(string.task_OfficeAiHijacking)" value="1047"/>
+  <task name="T_RunExAndRunOnceEx" message="$(string.task_RunExAndRunOnceEx)" value="1048"/>
+  <task name="T_DotNetStartupHooks" message="$(string.task_DotNetStartupHooks)" value="1049"/>
+  <task name="T_RIDHijacking" message="$(string.task_RIDHijacking)" value="1050"/>
+  <task name="T_SubornerAttack" message="$(string.task_SubornerAttack)" value="1051"/>
+  <task name="T_DSRMBackdoor" message="$(string.task_DSRMBackdoor)" value="1052"/>
+ </tasks>
+ <opcodes>
+ </opcodes>
+ <keywords>
+ 
+  <keyword name="Session4" message="$(string.keyword_Session4)" mask="0x000000000001"/>
+  
+  <!-- https://referencesource.microsoft.com/#mscorlib/system/diagnostics/eventing/eventsource.cs,3347-->
+  <keyword name="Session3" message="$(string.keyword_Session3)" mask="0x100000000000"/>
+  <keyword name="Session2" message="$(string.keyword_Session2)" mask="0x200000000000"/>
+  <keyword name="Session1" message="$(string.keyword_Session1)" mask="0x400000000000"/>
+  <keyword name="Session0" message="$(string.keyword_Session0)" mask="0x800000000000"/>
+	  
+ </keywords>
+ <events>
+  <event value="1001" version="0" level="win:Warning" task="T_RunAndRunOnce" channel="Operational" template="EventArgs" message="$(string.event_RunAndRunOnce)"/>
+  <event value="1002" version="0" level="win:Warning" task="T_ImageFileExecutionOptions" channel="Operational" template="EventArgs" message="$(string.event_ImageFileExecutionOptions)"/>
+  <event value="1003" version="0" level="win:Warning" task="T_NLDPDllOverridePath" channel="Operational" template="EventArgs" message="$(string.event_NLDPDllOverridePath)"/>
+  <event value="1004" version="0" level="win:Warning" task="T_AeDebug" channel="Operational" template="EventArgs" message="$(string.event_AeDebug)"/>
+  <event value="1005" version="0" level="win:Warning" task="T_WerFaultHangs" channel="Operational" template="EventArgs" message="$(string.event_WerFaultHangs)"/>
+  <event value="1006" version="0" level="win:Warning" task="T_CmdAutoRun" channel="Operational" template="EventArgs" message="$(string.event_CmdAutoRun)"/>
+  <event value="1007" version="0" level="win:Warning" task="T_ExplorerLoad" channel="Operational" template="EventArgs" message="$(string.event_ExplorerLoad)"/>
+  <event value="1008" version="0" level="win:Warning" task="T_WinlogonUserinit" channel="Operational" template="EventArgs" message="$(string.event_WinlogonUserinit)"/>
+  <event value="1009" version="0" level="win:Warning" task="T_WinlogonShell" channel="Operational" template="EventArgs" message="$(string.event_WinlogonShell)"/>
+  <event value="1010" version="0" level="win:Warning" task="T_TerminalProfileStartOnUserLogin" channel="Operational" template="EventArgs" message="$(string.event_TerminalProfileStartOnUserLogin)"/>
+  <event value="1011" version="0" level="win:Warning" task="T_AppCertDlls" channel="Operational" template="EventArgs" message="$(string.event_AppCertDlls)"/>
+  <event value="1012" version="0" level="win:Warning" task="T_ServiceDlls" channel="Operational" template="EventArgs" message="$(string.event_ServiceDlls)"/>
+  <event value="1013" version="0" level="win:Warning" task="T_GPExtensionDlls" channel="Operational" template="EventArgs" message="$(string.event_GPExtensionDlls)"/>
+  <event value="1014" version="0" level="win:Warning" task="T_WinlogonMPNotify" channel="Operational" template="EventArgs" message="$(string.event_WinlogonMPNotify)"/>
+  <event value="1015" version="0" level="win:Warning" task="T_CHMHelperDll" channel="Operational" template="EventArgs" message="$(string.event_CHMHelperDll)"/>
+  <event value="1016" version="0" level="win:Warning" task="T_HHCtrlHijacking" channel="Operational" template="EventArgs" message="$(string.event_HHCtrlHijacking)"/>
+  <event value="1017" version="0" level="win:Warning" task="T_StartupPrograms" channel="Operational" template="EventArgs" message="$(string.event_StartupPrograms)"/>
+  <event value="1018" version="0" level="win:Warning" task="T_UserInitMprScript" channel="Operational" template="EventArgs" message="$(string.event_UserInitMprScript)"/>
+  <event value="1019" version="0" level="win:Warning" task="T_AutodialDLL" channel="Operational" template="EventArgs" message="$(string.event_AutodialDLL)"/>
+  <event value="1020" version="0" level="win:Warning" task="T_LsaExtensions" channel="Operational" template="EventArgs" message="$(string.event_LsaExtensions)"/>
+  <event value="1021" version="0" level="win:Warning" task="T_ServerLevelPluginDll" channel="Operational" template="EventArgs" message="$(string.event_ServerLevelPluginDll)"/>
+  <event value="1022" version="0" level="win:Warning" task="T_LsaPasswordFilter" channel="Operational" template="EventArgs" message="$(string.event_LsaPasswordFilter)"/>
+  <event value="1023" version="0" level="win:Warning" task="T_LsaAuthenticationPackages" channel="Operational" template="EventArgs" message="$(string.event_LsaAuthenticationPackages)"/>
+  <event value="1024" version="0" level="win:Warning" task="T_LsaSecurityPackages" channel="Operational" template="EventArgs" message="$(string.event_LsaSecurityPackages)"/>
+  <event value="1025" version="0" level="win:Warning" task="T_WinlogonNotificationPackages" channel="Operational" template="EventArgs" message="$(string.event_WinlogonNotificationPackages)"/>
+  <event value="1026" version="0" level="win:Warning" task="T_ExplorerTools" channel="Operational" template="EventArgs" message="$(string.event_ExplorerTools)"/>
+  <event value="1027" version="0" level="win:Warning" task="T_DotNetDebugger" channel="Operational" template="EventArgs" message="$(string.event_DotNetDebugger)"/>
+  <event value="1028" version="0" level="win:Warning" task="T_ErrorHandlerCmd" channel="Operational" template="EventArgs" message="$(string.event_ErrorHandlerCmd)"/>
+  <event value="1029" version="0" level="win:Warning" task="T_WMIEventsSubscrition" channel="Operational" template="EventArgs" message="$(string.event_WMIEventsSubscrition)"/>
+  <event value="1030" version="0" level="win:Warning" task="T_WindowsServices" channel="Operational" template="EventArgs" message="$(string.event_WindowsServices)"/>
+  <event value="1031" version="0" level="win:Warning" task="T_AppPaths" channel="Operational" template="EventArgs" message="$(string.event_AppPaths)"/>
+  <event value="1032" version="0" level="win:Warning" task="T_TerminalServicesInitialProgram" channel="Operational" template="EventArgs" message="$(string.event_TerminalServicesInitialProgram)"/>
+  <event value="1033" version="0" level="win:Warning" task="T_AccessibilityTools" channel="Operational" template="EventArgs" message="$(string.event_AccessibilityTools)"/>
+  <event value="1034" version="0" level="win:Warning" task="T_AMSIProviders" channel="Operational" template="EventArgs" message="$(string.event_AMSIProviders)"/>
+  <event value="1035" version="0" level="win:Warning" task="T_PowershellProfiles" channel="Operational" template="EventArgs" message="$(string.event_PowershellProfiles)"/>
+  <event value="1036" version="0" level="win:Warning" task="T_SilentExitMonitor" channel="Operational" template="EventArgs" message="$(string.event_SilentExitMonitor)"/>
+  <event value="1037" version="0" level="win:Warning" task="T_TelemetryController" channel="Operational" template="EventArgs" message="$(string.event_TelemetryController)"/>
+  <event value="1038" version="0" level="win:Warning" task="T_RDPWDSStartupPrograms" channel="Operational" template="EventArgs" message="$(string.event_RDPWDSStartupPrograms)"/>
+  <event value="1039" version="0" level="win:Warning" task="T_ScheduledTasks" channel="Operational" template="EventArgs" message="$(string.event_ScheduledTasks)"/>
+  <event value="1040" version="0" level="win:Warning" task="T_BitsJobsNotify" channel="Operational" template="EventArgs" message="$(string.event_BitsJobsNotify)"/>
+  <event value="1041" version="0" level="win:Warning" task="T_Screensaver" channel="Operational" template="EventArgs" message="$(string.event_Screensaver)"/>
+  <event value="1042" version="0" level="win:Warning" task="T_PowerAutomate" channel="Operational" template="EventArgs" message="$(string.event_PowerAutomate)"/>
+  <event value="1043" version="0" level="win:Warning" task="T_OfficeAddinsAndTemplates" channel="Operational" template="EventArgs" message="$(string.event_OfficeAddinsAndTemplates)"/>
+  <event value="1044" version="0" level="win:Warning" task="T_Services" channel="Operational" template="EventArgs" message="$(string.event_Services)"/>
+  <event value="1045" version="0" level="win:Warning" task="T_ExplorerContextMenu" channel="Operational" template="EventArgs" message="$(string.event_ExplorerContextMenu)"/>
+  <event value="1046" version="0" level="win:Warning" task="T_ServiceControlManagerSD" channel="Operational" template="EventArgs" message="$(string.event_ServiceControlManagerSD)"/>
+  <event value="1047" version="0" level="win:Warning" task="T_OfficeAiHijacking" channel="Operational" template="EventArgs" message="$(string.event_OfficeAiHijacking)"/>
+  <event value="1048" version="0" level="win:Warning" task="T_RunExAndRunOnceEx" channel="Operational" template="EventArgs" message="$(string.event_RunExAndRunOnceEx)"/>
+  <event value="1049" version="0" level="win:Warning" task="T_DotNetStartupHooks" channel="Operational" template="EventArgs" message="$(string.event_DotNetStartupHooks)"/>
+  <event value="1050" version="0" level="win:Warning" task="T_RIDHijacking" channel="Operational" template="EventArgs" message="$(string.event_RIDHijacking)"/>
+  <event value="1051" version="0" level="win:Warning" task="T_SubornerAttack" channel="Operational" template="EventArgs" message="$(string.event_SubornerAttack)"/>
+  <event value="1052" version="0" level="win:Warning" task="T_DSRMBackdoor" channel="Operational" template="EventArgs" message="$(string.event_DSRMBackdoor)"/>
+
+ </events>
+ <templates>
+  <template tid="EventSourceMessageArgs">
+   <data name="message" inType="win:UnicodeString"/>
+  </template>
+  <template tid="EventArgs">
+   <data name="Message" inType="win:UnicodeString" outType="xs:string"/>
+   <data name="Technique" inType="win:UnicodeString"/>
+   <data name="Classification" inType="win:UnicodeString"/>
+   <data name="Path" inType="win:UnicodeString"/>
+   <data name="Value" inType="win:UnicodeString"/>
+   <data name="AccessGained" inType="win:UnicodeString"/>
+   <data name="Note" inType="win:UnicodeString"/>
+   <data name="Reference" inType="win:UnicodeString"/>
+   <data name="Signature" inType="win:UnicodeString"/>
+   <data name="IsBuiltinBinary" inType="win:UnicodeString"/>
+   <data name="IsLolbin" inType="win:UnicodeString"/>
+   <data name="VtEntries" inType="win:UnicodeString"/>
+  </template>
+ </templates>
+</provider>
+</events>
+</instrumentation>
+<localization>
+ <resources culture="en-US">
+  <stringTable>
+    <string id="Event1" value="Message: %1" />
+    <string id="keyword_Session0" value="Session0"/>
+    <string id="keyword_Session1" value="Session1"/>
+    <string id="keyword_Session2" value="Session2"/>
+    <string id="keyword_Session3" value="Session3"/>
+    <string id="keyword_Session4" value="Session4"/>
+
+    <string id="task_Scan" value="Scan"/>
+    
+    <string id="task_RunAndRunOnce" value="RunAndRunOnce"/>
+    <string id="task_ImageFileExecutionOptions" value="ImageFileExecutionOptions"/>
+    <string id="task_NLDPDllOverridePath" value="NLDPDllOverridePath"/>
+    <string id="task_AeDebug" value="AeDebug"/>
+    <string id="task_WerFaultHangs" value="WerFaultHangs"/>
+    <string id="task_CmdAutoRun" value="CmdAutoRun"/>
+    <string id="task_ExplorerLoad" value="ExplorerLoad"/>
+    <string id="task_WinlogonUserinit" value="WinlogonUserinit"/>
+    <string id="task_WinlogonShell" value="WinlogonShell"/>
+    <string id="task_TerminalProfileStartOnUserLogin" value="TerminalProfileStartOnUserLogin"/>
+    <string id="task_AppCertDlls" value="AppCertDlls"/>
+    <string id="task_ServiceDlls" value="ServiceDlls"/>
+    <string id="task_GPExtensionDlls" value="GPExtensionDlls"/>
+    <string id="task_WinlogonMPNotify" value="WinlogonMPNotify"/>
+    <string id="task_CHMHelperDll" value="CHMHelperDll"/>
+    <string id="task_HHCtrlHijacking" value="HHCtrlHijacking"/>
+    <string id="task_StartupPrograms" value="StartupPrograms"/>
+    <string id="task_UserInitMprScript" value="UserInitMprScript"/>
+    <string id="task_AutodialDLL" value="AutodialDLL"/>
+    <string id="task_LsaExtensions" value="LsaExtensions"/>
+    <string id="task_ServerLevelPluginDll" value="ServerLevelPluginDll"/>
+    <string id="task_LsaPasswordFilter" value="LsaPasswordFilter"/>
+    <string id="task_LsaAuthenticationPackages" value="LsaAuthenticationPackages"/>
+    <string id="task_LsaSecurityPackages" value="LsaSecurityPackages"/>
+    <string id="task_WinlogonNotificationPackages" value="WinlogonNotificationPackages"/>
+    <string id="task_ExplorerTools" value="ExplorerTools"/>
+    <string id="task_DotNetDebugger" value="DotNetDebugger"/>
+    <string id="task_ErrorHandlerCmd" value="ErrorHandlerCmd"/>
+    <string id="task_WMIEventsSubscrition" value="WMIEventsSubscrition"/>
+    <string id="task_WindowsServices" value="WindowsServices"/>
+    <string id="task_AppPaths" value="AppPaths"/>
+    <string id="task_TerminalServicesInitialProgram" value="TerminalServicesInitialProgram"/>
+    <string id="task_AccessibilityTools" value="AccessibilityTools"/>
+    <string id="task_AMSIProviders" value="AMSIProviders"/>
+    <string id="task_PowershellProfiles" value="PowershellProfiles"/>
+    <string id="task_SilentExitMonitor" value="SilentExitMonitor"/>
+    <string id="task_TelemetryController" value="TelemetryController"/>
+    <string id="task_RDPWDSStartupPrograms" value="RDPWDSStartupPrograms"/>
+    <string id="task_ScheduledTasks" value="ScheduledTasks"/>
+    <string id="task_BitsJobsNotify" value="BitsJobsNotify"/>
+    <string id="task_Screensaver" value="Screensaver"/>
+    <string id="task_PowerAutomate" value="PowerAutomate"/>
+    <string id="task_OfficeAddinsAndTemplates" value="OfficeAddinsAndTemplates"/>
+    <string id="task_Services" value="Services"/>
+    <string id="task_ExplorerContextMenu" value="ExplorerContextMenu"/>
+    <string id="task_ServiceControlManagerSD" value="ServiceControlManagerSD"/>
+    <string id="task_OfficeAiHijacking" value="OfficeAiHijacking"/>
+    <string id="task_RunExAndRunOnceEx" value="RunExAndRunOnceEx"/>
+    <string id="task_DotNetStartupHooks" value="DotNetStartupHooks"/>
+    <string id="task_RIDHijacking" value="RIDHijacking"/>
+    <string id="task_SubornerAttack" value="SubornerAttack"/>
+    <string id="task_DSRMBackdoor" value="DSRMBackdoor"/>
+
+    <string id="event_RunAndRunOnce" value="%3: %2 (%7)"/>
+    <string id="event_ImageFileExecutionOptions" value="%3: %2 (%7)"/>
+    <string id="event_NLDPDllOverridePath" value="%3: %2 (%7)"/>
+    <string id="event_AeDebug" value="%3: %2 (%7)"/>
+    <string id="event_WerFaultHangs" value="%3: %2 (%7)"/>
+    <string id="event_CmdAutoRun" value="%3: %2 (%7)"/>
+    <string id="event_ExplorerLoad" value="%3: %2 (%7)"/>
+    <string id="event_WinlogonUserinit" value="%3: %2 (%7)"/>
+    <string id="event_WinlogonShell" value="%3: %2 (%7)"/>
+    <string id="event_TerminalProfileStartOnUserLogin" value="%3: %2 (%7)"/>
+    <string id="event_AppCertDlls" value="%3: %2 (%7)"/>
+    <string id="event_ServiceDlls" value="%3: %2 (%7)"/>
+    <string id="event_GPExtensionDlls" value="%3: %2 (%7)"/>
+    <string id="event_WinlogonMPNotify" value="%3: %2 (%7)"/>
+    <string id="event_CHMHelperDll" value="%3: %2 (%7)"/>
+    <string id="event_HHCtrlHijacking" value="%3: %2 (%7)"/>
+    <string id="event_StartupPrograms" value="%3: %2 (%7)"/>
+    <string id="event_UserInitMprScript" value="%3: %2 (%7)"/>
+    <string id="event_AutodialDLL" value="%3: %2 (%7)"/>
+    <string id="event_LsaExtensions" value="%3: %2 (%7)"/>
+    <string id="event_ServerLevelPluginDll" value="%3: %2 (%7)"/>
+    <string id="event_LsaPasswordFilter" value="%3: %2 (%7)"/>
+    <string id="event_LsaAuthenticationPackages" value="%3: %2 (%7)"/>
+    <string id="event_LsaSecurityPackages" value="%3: %2 (%7)"/>
+    <string id="event_WinlogonNotificationPackages" value="%3: %2 (%7)"/>
+    <string id="event_ExplorerTools" value="%3: %2 (%7)"/>
+    <string id="event_DotNetDebugger" value="%3: %2 (%7)"/>
+    <string id="event_ErrorHandlerCmd" value="%3: %2 (%7)"/>
+    <string id="event_WMIEventsSubscrition" value="%3: %2 (%7)"/>
+    <string id="event_WindowsServices" value="%3: %2 (%7)"/>
+    <string id="event_AppPaths" value="%3: %2 (%7)"/>
+    <string id="event_TerminalServicesInitialProgram" value="%3: %2 (%7)"/>
+    <string id="event_AccessibilityTools" value="%3: %2 (%7)"/>
+    <string id="event_AMSIProviders" value="%3: %2 (%7)"/>
+    <string id="event_PowershellProfiles" value="%3: %2 (%7)"/>
+    <string id="event_SilentExitMonitor" value="%3: %2 (%7)"/>
+    <string id="event_TelemetryController" value="%3: %2 (%7)"/>
+    <string id="event_RDPWDSStartupPrograms" value="%3: %2 (%7)"/>
+    <string id="event_ScheduledTasks" value="%3: %2 (%7)"/>
+    <string id="event_BitsJobsNotify" value="%3: %2 (%7)"/>
+    <string id="event_Screensaver" value="%3: %2 (%7)"/>
+    <string id="event_PowerAutomate" value="%3: %2 (%7)"/>
+    <string id="event_OfficeAddinsAndTemplates" value="%3: %2 (%7)"/>
+    <string id="event_Services" value="%3: %2 (%7)"/>
+    <string id="event_ExplorerContextMenu" value="%3: %2 (%7)"/>
+    <string id="event_ServiceControlManagerSD" value="%3: %2 (%7)"/>
+    <string id="event_OfficeAiHijacking" value="%3: %2 (%7)"/>
+    <string id="event_RunExAndRunOnceEx" value="%3: %2 (%7)"/>
+    <string id="event_DotNetStartupHooks" value="%3: %2 (%7)"/>
+    <string id="event_RIDHijacking" value="%3: %2 (%7)"/>
+    <string id="event_SubornerAttack" value="%3: %2 (%7)"/>
+    <string id="event_DSRMBackdoor" value="%3: %2 (%7)"/>
+  </stringTable>
+ </resources>
+</localization>
+</instrumentationManifest>
